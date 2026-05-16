@@ -1,0 +1,27 @@
+{
+  "name": "@industrysignal/portal",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Client portal — Next.js 14 App Router. The login + Missions / Report / Watch / Alerts surface (HANDOFF §17, §21).",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@industrysignal/i18n": "workspace:*",
+    "@industrysignal/tokens": "workspace:*",
+    "@industrysignal/ui": "workspace:*",
+    "next": "^14.2.18",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.6.3"
+  }
+}

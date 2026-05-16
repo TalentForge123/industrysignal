@@ -1,0 +1,13 @@
+{
+  "name": "@industrysignal/tokens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Design tokens — colors, typography, spacing. Single source of truth.",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./tokens.css": "./tokens.css"
+  },
+  "files": ["index.ts", "tokens.css"]
+}

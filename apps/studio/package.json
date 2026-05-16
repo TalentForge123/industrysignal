@@ -1,0 +1,9 @@
+{
+  "name": "@industrysignal/studio",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Editorial CMS — internal app for analysts to write quarterly reports and review LLM-generated mission playbooks (HANDOFF §4 / §15.5). Placeholder until Sprint 4.",
+  "scripts": {
+    "dev": "echo 'studio app placeholder — wired up in Sprint 4 (Report engine + Studio app)'"
+  }
+}

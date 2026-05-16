@@ -1,0 +1,9 @@
+{
+  "name": "@industrysignal/workers",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Background workers — scrapers, alert diff engine, PDF generation, mission resolution pipeline (HANDOFF §13, §15.5, §16). Placeholder until Sprint 2.",
+  "scripts": {
+    "dev": "echo 'workers placeholder — first connectors land in Sprint 2 (CSU/CNB/ARES/ISIR)'"
+  }
+}
