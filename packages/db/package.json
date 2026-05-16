@@ -13,6 +13,7 @@
   "files": ["src/**", "drizzle/**"],
   "scripts": {
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check"

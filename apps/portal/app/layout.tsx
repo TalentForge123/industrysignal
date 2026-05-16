@@ -12,11 +12,19 @@ export const metadata: Metadata = {
 // portal. Graphite is the secondary toggle (lands with the TopBar port in
 // Sprint 5). This inline script runs before React hydrates, so a previously
 // persisted choice in localStorage wins without a flash of the wrong theme.
+//
+// `?theme=editorial` or `?theme=graphite` in the URL overrides localStorage
+// for the current navigation only (not persisted) — useful for shareable
+// preview URLs and theme-specific screenshots without UI interaction.
 const themeBootstrapScript = `
 (function(){
   try {
     localStorage.removeItem('is.theme');
-    var t = localStorage.getItem('is.theme.v2') || 'editorial';
+    var qp = null;
+    try { qp = new URLSearchParams(window.location.search).get('theme'); } catch (_) {}
+    var t = (qp === 'editorial' || qp === 'graphite')
+      ? qp
+      : (localStorage.getItem('is.theme.v2') || 'editorial');
     if (t !== 'editorial' && t !== 'graphite') t = 'editorial';
     document.documentElement.setAttribute('data-theme', t);
   } catch (_) {}

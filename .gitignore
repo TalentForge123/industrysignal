@@ -20,6 +20,12 @@ next-env.d.ts
 .env.*.local
 !.env.example
 
+# Editor backup / save artifacts that may carry env contents
+*.save
+*.bak
+*.orig
+*~
+
 # Editor / OS
 .DS_Store
 .vscode/*
