@@ -50,6 +50,42 @@ export const verificationTokens = pgTable(
   }),
 );
 
+// Account + Session tables are required by the @auth/drizzle-adapter type
+// signature even when not used at runtime. We run JWT sessions (HANDOFF §6)
+// and magic-link auth only — so `session` stays empty and `account` only
+// fills up if we later add an OAuth provider. JS field names follow the
+// Auth.js convention (mix of camelCase and snake_case) verbatim; DB columns
+// stay snake_case via the explicit second arg.
+export const accounts = pgTable(
+  'account',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    provider: text('provider').notNull(),
+    providerAccountId: text('provider_account_id').notNull(),
+    refresh_token: text('refresh_token'),
+    access_token: text('access_token'),
+    expires_at: integer('expires_at'),
+    token_type: text('token_type'),
+    scope: text('scope'),
+    id_token: text('id_token'),
+    session_state: text('session_state'),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.provider, t.providerAccountId] }),
+  }),
+);
+
+export const sessions = pgTable('session', {
+  sessionToken: text('session_token').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  expires: timestamp('expires', { mode: 'date', withTimezone: true }).notNull(),
+});
+
 // ============================================================
 // TENANCY — organization is the billing + access boundary.
 // ============================================================

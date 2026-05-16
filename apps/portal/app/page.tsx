@@ -12,6 +12,7 @@
 // in Sprint 5; until then the page renders in the persisted (or default
 // 'cs') language.
 
+import Link from 'next/link';
 import { Pill, Tile, MonoLabel, Button } from '@industrysignal/ui';
 import { t } from '@industrysignal/i18n';
 import { useLang } from '@industrysignal/i18n/client';
@@ -112,9 +113,25 @@ export default function HomePage() {
         <Button kind="ghost" icon="external-link">
           HANDOFF.md
         </Button>
-        <Button kind="primary" icon="lock" disabled>
+        <Link
+          href="/login"
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: 13,
+            fontWeight: 500,
+            padding: '8px 14px',
+            borderRadius: 'var(--r-sm)',
+            border: '1px solid transparent',
+            background: 'var(--amber-300)',
+            color: 'var(--fg-on-amber)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            textDecoration: 'none',
+          }}
+        >
           {t(lang, 'login_submit')}
-        </Button>
+        </Link>
       </footer>
     </main>
   );
