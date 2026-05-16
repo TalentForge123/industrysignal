@@ -1,4 +1,12 @@
-// Placeholder. The Drizzle schema (users, organizations, watchlists, alerts,
-// reports, sources, plus the entity graph from HANDOFF §15) lands in a
-// follow-up commit alongside Auth.js wiring.
-export {};
+// Public surface for @industrysignal/db.
+//
+// - `schema` — table definitions + relations, importable as a namespace
+//   for Drizzle queries: `db.query.users.findFirst(...)`.
+// - `createDb(url)` — client factory, see ./client.ts.
+//
+// Types for individual tables (`InferSelectModel<typeof users>` etc.) can
+// be derived in app code as needed; we don't pre-export every row type
+// to keep the surface small.
+
+export * as schema from './schema';
+export { createDb, type Database, type CreateDbOptions } from './client';
