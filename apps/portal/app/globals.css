@@ -25,3 +25,36 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+/* ============================================================
+   Bloomberg-style dense data grid. Shared by Watch / Alerts /
+   Archive / SRSC / XMAP. Lives here (not in @industrysignal/tokens)
+   because it's portal-specific table chrome, not a design primitive.
+   Ported from ui_kits/portal/tokens.css.
+   ============================================================ */
+.bbg-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+.bbg-table th,
+.bbg-table td {
+  padding: 4px 8px;
+  border: 1px solid var(--graphite-800);
+  text-align: left;
+}
+.bbg-table th {
+  background: var(--graphite-900);
+  color: var(--fg-tertiary);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+.bbg-table td.num { text-align: right; }
+.bbg-table tr:hover td { background: rgba(242, 187, 84, 0.04); }
+.bbg-table .up { color: var(--signal-up); }
+.bbg-table .dn { color: var(--signal-down); }
+.bbg-table .key { color: var(--accent-text); }

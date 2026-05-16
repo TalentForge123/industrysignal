@@ -231,6 +231,111 @@ export function getReport(lang: Lang): Report {
   return REPORTS[lang];
 }
 
+// ============================================================
+// ARCHIVE / WATCH LIST / ALERTS — bilingual slices ported from
+// ui_kits/portal/data.js. DB-backed versions land in Sprint 3+.
+// ============================================================
+
+export interface ArchiveRow {
+  q: string;
+  date: string;
+  title: string;
+}
+
+export interface WatchlistRow {
+  ticker: string;
+  name: string;
+  sub: string;
+  segment: string;
+  status: 'up' | 'dn' | 'warn';
+  delta: string;
+  dir: 'up' | 'dn';
+  last: string;
+}
+
+export interface AlertRow {
+  id: string;
+  tone: 'up' | 'dn' | 'warn';
+  kind: string;
+  target: string;
+  body: string;
+  time: string;
+  fresh: boolean;
+  ticker?: string;
+}
+
+interface PortalSlice {
+  archive: ArchiveRow[];
+  watchlist: WatchlistRow[];
+  alerts: AlertRow[];
+}
+
+const csSlice: PortalSlice = {
+  archive: [
+    { q: 'Q1 2026', date: '14. února 2026', title: 'Pomalý start roku 2026' },
+    { q: 'Q4 2025', date: '12. listopadu 2025', title: 'Konec roku ve znamení energetiky' },
+    { q: 'Q3 2025', date: '14. srpna 2025', title: 'Letní stagnace v automotive' },
+    { q: 'Q2 2025', date: '15. května 2025', title: 'První pololetí 2025' },
+    { q: 'Q1 2025', date: '14. února 2025', title: 'Pozvolné oživení po recesi' },
+    { q: 'Q4 2024', date: '12. listopadu 2024', title: 'Závěr náročného roku 2024' },
+  ],
+  watchlist: [
+    { ticker: 'SKDA', name: 'Škoda Auto a.s.', sub: 'CZ · OEM', segment: 'Automotive', status: 'warn', delta: '−2,4 %', dir: 'dn', last: '14. 5.' },
+    { ticker: 'CEZ',  name: 'ČEZ a.s.', sub: 'CZ · Energetika', segment: 'Energetika', status: 'up', delta: '+1,2 %', dir: 'up', last: '12. 5.' },
+    { ticker: 'VITS', name: 'Vítkovice Steel', sub: 'CZ · Hutnictví', segment: 'Hutnictví', status: 'dn', delta: '−5,8 %', dir: 'dn', last: '14. 5.' },
+    { ticker: 'TZIN', name: 'Třinecké železárny', sub: 'CZ · Hutnictví', segment: 'Hutnictví', status: 'warn', delta: '−3,1 %', dir: 'dn', last: '13. 5.' },
+    { ticker: 'UNIP', name: 'Unipetrol RPA', sub: 'CZ · Chemie', segment: 'Chemie', status: 'up', delta: '+0,6 %', dir: 'up', last: '11. 5.' },
+    { ticker: 'CDCG', name: 'ČD Cargo', sub: 'CZ · Logistika', segment: 'Logistika', status: 'up', delta: '+2,1 %', dir: 'up', last: '10. 5.' },
+    { ticker: 'TATR', name: 'Tatra Trucks', sub: 'CZ · OEM', segment: 'Automotive', status: 'warn', delta: '−1,4 %', dir: 'dn', last: '14. 5.' },
+  ],
+  alerts: [
+    { id: 'a1', tone: 'dn', kind: 'Alert', target: 'Vítkovice Steel', body: 'Cena válcovaného plechu propadla −5,8 % WoW. Indikace dopadu na 4 firmy ve vašem Watch Listu.', time: '14:32', fresh: true },
+    { id: 'a2', tone: 'warn', kind: 'Watch', target: 'VW Group', body: 'VW Group ohlásil snížení produkce v Mladé Boleslavi o −12 % pro H2 2026.', time: '12:08', fresh: true },
+    { id: 'a3', tone: 'up', kind: 'Pozitiv.', target: 'ČEZ a.s.', body: 'Tržby za Q2 nad konsensem o +1,2 p.b.', time: 'včera', fresh: false },
+    { id: 'a4', tone: 'warn', kind: 'Sledujeme', target: 'CSRD H2', body: 'Třetí vlna CSRD reportingu vstupuje v platnost 1. 7. Dotčeno 12 firem ve Watch Listu.', time: '13. 5.', fresh: false },
+    { id: 'a5', tone: 'dn', kind: 'Alert', target: 'Tatra Trucks', body: 'Q2 EBITDA −1,4 % Q/Q. Pod konsensem analytiků o 0,8 p.b.', time: '12. 5.', fresh: false },
+  ],
+};
+
+const enSlice: PortalSlice = {
+  archive: [
+    { q: 'Q1 2026', date: 'February 14, 2026', title: 'A slow start to 2026' },
+    { q: 'Q4 2025', date: 'November 12, 2025', title: 'Year-end shaped by energy' },
+    { q: 'Q3 2025', date: 'August 14, 2025', title: 'Summer stagnation in automotive' },
+    { q: 'Q2 2025', date: 'May 15, 2025', title: 'First half of 2025' },
+    { q: 'Q1 2025', date: 'February 14, 2025', title: 'A gradual recovery from recession' },
+    { q: 'Q4 2024', date: 'November 12, 2024', title: 'Closing a demanding 2024' },
+  ],
+  watchlist: [
+    { ticker: 'SKDA', name: 'Škoda Auto a.s.', sub: 'CZ · OEM', segment: 'Automotive', status: 'warn', delta: '−2.4%', dir: 'dn', last: 'May 14' },
+    { ticker: 'CEZ',  name: 'ČEZ a.s.', sub: 'CZ · Energy', segment: 'Energy', status: 'up', delta: '+1.2%', dir: 'up', last: 'May 12' },
+    { ticker: 'VITS', name: 'Vítkovice Steel', sub: 'CZ · Metallurgy', segment: 'Metallurgy', status: 'dn', delta: '−5.8%', dir: 'dn', last: 'May 14' },
+    { ticker: 'TZIN', name: 'Třinecké železárny', sub: 'CZ · Metallurgy', segment: 'Metallurgy', status: 'warn', delta: '−3.1%', dir: 'dn', last: 'May 13' },
+    { ticker: 'UNIP', name: 'Unipetrol RPA', sub: 'CZ · Chemicals', segment: 'Chemicals', status: 'up', delta: '+0.6%', dir: 'up', last: 'May 11' },
+    { ticker: 'CDCG', name: 'ČD Cargo', sub: 'CZ · Logistics', segment: 'Logistics', status: 'up', delta: '+2.1%', dir: 'up', last: 'May 10' },
+    { ticker: 'TATR', name: 'Tatra Trucks', sub: 'CZ · OEM', segment: 'Automotive', status: 'warn', delta: '−1.4%', dir: 'dn', last: 'May 14' },
+  ],
+  alerts: [
+    { id: 'a1', tone: 'dn', kind: 'Alert', target: 'Vítkovice Steel', body: 'Hot-rolled steel price dropped −5.8% WoW. Likely impact on 4 companies in your Watch List.', time: '14:32', fresh: true },
+    { id: 'a2', tone: 'warn', kind: 'Watch', target: 'VW Group', body: 'VW Group cut Mladá Boleslav production by −12% for H2 2026.', time: '12:08', fresh: true },
+    { id: 'a3', tone: 'up', kind: 'Positive', target: 'ČEZ a.s.', body: 'Q2 revenue beat consensus by +1.2 pp.', time: 'yesterday', fresh: false },
+    { id: 'a4', tone: 'warn', kind: 'Watching', target: 'CSRD H2', body: 'Third wave of CSRD reporting takes effect Jul 1. Affects 12 Watch List firms.', time: 'May 13', fresh: false },
+    { id: 'a5', tone: 'dn', kind: 'Alert', target: 'Tatra Trucks', body: 'Q2 EBITDA −1.4% Q/Q. Below analyst consensus by 0.8 pp.', time: 'May 12', fresh: false },
+  ],
+};
+
+const SLICES: Record<Lang, PortalSlice> = { cs: csSlice, en: enSlice };
+
+export function getArchive(lang: Lang): ArchiveRow[] {
+  return SLICES[lang].archive;
+}
+export function getWatchlist(lang: Lang): WatchlistRow[] {
+  return SLICES[lang].watchlist;
+}
+export function getAlerts(lang: Lang): AlertRow[] {
+  return SLICES[lang].alerts;
+}
+
 // Static risk-map widget data for the Sidebar (Sprint 1 placeholder).
 // Real numbers will be derived from srsc_scores in Sprint 5+ per §22.
 export interface RiskMapData {
