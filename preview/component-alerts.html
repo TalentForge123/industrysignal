@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Alert cards</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .header .t { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .header .s { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .alert { background: var(--bg-card); border: 1px solid var(--ln-divider); border-radius: var(--r-md); padding: 14px 16px; display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; align-items: start; position: relative; }
+  .alert.fresh { border-color: transparent; box-shadow: var(--elev-glow-amber); background: var(--bg-card); }
+  .alert .icon { width: 24px; height: 24px; border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .alert.dn .icon { background: var(--signal-down-bg); color: var(--signal-down); }
+  .alert.warn .icon { background: var(--signal-warn-bg); color: var(--signal-warn); }
+  .alert.up .icon { background: var(--signal-up-bg); color: var(--signal-up); }
+  .meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-tertiary); margin-bottom: 4px; display: flex; gap: 8px; align-items: center; }
+  .meta .sep { color: var(--fg-muted); }
+  .alert.dn .meta .kind { color: var(--signal-down); }
+  .alert.warn .meta .kind { color: var(--signal-warn); }
+  .alert.up .meta .kind { color: var(--signal-up); }
+  .body { font-family: var(--font-sans); font-size: 13px; line-height: 1.5; color: var(--fg-primary); }
+  .body strong { color: var(--fg-primary); font-weight: 600; }
+  .body .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .time { font-family: var(--font-mono); font-size: 10px; color: var(--fg-muted); white-space: nowrap; padding-top: 2px; }
+  .freshdot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber-300); position: absolute; top: 14px; right: 14px; box-shadow: 0 0 8px var(--amber-400); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="t">Alerts · feed cards</div>
+    <div class="s">amber glow = unread · 1 at a time</div>
+  </div>
+  <div class="stack">
+    <div class="alert fresh dn">
+      <span class="freshdot"></span>
+      <div class="icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 9v4M12 17h.01M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg></div>
+      <div>
+        <div class="meta"><span class="kind">Alert</span><span class="sep">·</span><span>Watch List</span><span class="sep">·</span><span>Vítkovice Steel</span></div>
+        <div class="body">Cena válcovaného plechu propadla <strong class="num">−5,8 %</strong> WoW. Indikace dopadu na 4 firmy ve vašem Watch Listu.</div>
+      </div>
+      <div class="time">14:32</div>
+    </div>
+    <div class="alert warn">
+      <div class="icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></div>
+      <div>
+        <div class="meta"><span class="kind">Watch</span><span class="sep">·</span><span>Sledujeme</span><span class="sep">·</span><span>VW Group</span></div>
+        <div class="body">VW Group ohlásil snížení produkce v Mladé Boleslavi o <strong class="num">−12 %</strong> pro H2 2026.</div>
+      </div>
+      <div class="time">12:08</div>
+    </div>
+    <div class="alert up">
+      <div class="icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+      <div>
+        <div class="meta"><span class="kind">Pozitiv.</span><span class="sep">·</span><span>Watch List</span><span class="sep">·</span><span>ČEZ a.s.</span></div>
+        <div class="body">Tržby za Q2 nad konsensem o <strong class="num">+1,2 p.b.</strong>. Detail v <a href="#">oddílu 3 reportu</a>.</div>
+      </div>
+      <div class="time">včera</div>
+    </div>
+  </div>
+</body>
+</html>

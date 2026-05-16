@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="cs" data-theme="editorial">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IndustrySignal · Klientský portál</title>
+  <link rel="stylesheet" href="tokens.css">
+  <script>
+    // Apply persisted theme before React mounts to avoid a flash.
+    // Legacy 'is.theme' key is dropped (editorial is the new default).
+    try {
+      localStorage.removeItem('is.theme');
+      var t = localStorage.getItem('is.theme.v2') || 'editorial';
+      document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  </script>
+  <style>
+    /* The pulse animation used by both Pill and TopBar live chip */
+    .is-pulse::after {
+      content: ''; position: absolute; inset: -3px;
+      border-radius: 50%; border: 1px solid currentColor;
+      animation: ispulse 1.6s ease-out infinite; opacity: 0.6;
+      pointer-events: none;
+    }
+    @keyframes ispulse {
+      0%   { transform: scale(0.6); opacity: 0.7; }
+      100% { transform: scale(2.0); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script src="i18n.js"></script>
+  <script src="data.js"></script>
+
+  <script type="text/babel" src="primitives.jsx"></script>
+  <script type="text/babel" src="Sidebar.jsx"></script>
+  <script type="text/babel" src="TopBar.jsx"></script>
+  <script type="text/babel" src="ReportView.jsx"></script>
+  <script type="text/babel" src="ArchiveView.jsx"></script>
+  <script type="text/babel" src="WatchListView.jsx"></script>
+  <script type="text/babel" src="AlertsView.jsx"></script>
+  <script type="text/babel" src="SupplierRiskView.jsx"></script>
+  <script type="text/babel" src="ExportMapView.jsx"></script>
+  <script type="text/babel" src="LoginView.jsx"></script>
+  <script type="text/babel" src="App.jsx"></script>
+</body>
+</html>

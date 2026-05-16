@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Body & editorial</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); }
+  .row { display: grid; grid-template-columns: 96px 1fr; gap: 14px 16px; align-items: baseline; }
+  .meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-muted); padding-top: 6px; }
+  .body { font-size: 14px; line-height: 1.65; color: var(--fg-secondary); max-width: 520px; }
+  .body-sm { font-size: 13px; line-height: 1.55; color: var(--fg-secondary); max-width: 520px; }
+  .caption { font-size: 12px; color: var(--fg-tertiary); }
+  .lead { font-family: var(--font-serif); font-size: 17px; font-weight: 400; line-height: 1.55; color: var(--fg-primary); font-style: italic; max-width: 520px; }
+  a { color: var(--accent-text); border-bottom: 1px solid rgba(242,187,84,0.35); }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="meta">Lead · serif 17</div>
+    <div class="lead">Druhý kvartál přinesl ochlazení v zakázkové výrobě napříč středoevropským regionem.</div>
+    <div class="meta">Body · 14 / 400</div>
+    <div class="body">Marže ve zpracovatelském průmyslu klesly v Q2 o 1,8 p.b. meziročně. Tlak vychází primárně z energetických nákladů ve východních regionech a ze zpoždění v automotive řetězci. <a href="#">Detail v oddílu 3</a>.</div>
+    <div class="meta">Small · 13</div>
+    <div class="body-sm">Zdroj: ČSÚ, vlastní výpočet redakce IndustrySignal · publikováno 14. 5. 2026</div>
+    <div class="meta">Caption · 12</div>
+    <div class="caption">Čísla v tabulkách jsou tabular-nums; sloupce číslic jsou vždy zarovnané.</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Form inputs</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .header .t { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .header .s { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .input {
+    font-family: var(--font-sans); font-size: 13px;
+    background: var(--bg-input); color: var(--fg-primary);
+    border: 1px solid var(--ln-border); border-radius: var(--r-sm);
+    padding: 9px 12px; outline: none;
+  }
+  .input.focus { border-color: var(--amber-400); box-shadow: 0 0 0 2px rgba(232,165,43,0.18); }
+  .input.error { border-color: var(--signal-down); }
+  .help { font-family: var(--font-sans); font-size: 11px; color: var(--fg-muted); }
+  .help.err { color: var(--signal-down); }
+  .search { position: relative; }
+  .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--fg-tertiary); }
+  .search input { padding-left: 32px; width: 100%; box-sizing: border-box; }
+  .toggle { display: flex; align-items: center; gap: 10px; }
+  .switch { width: 32px; height: 18px; background: var(--graphite-700); border-radius: 999px; position: relative; cursor: pointer; }
+  .switch.on { background: var(--amber-400); }
+  .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: var(--graphite-100); border-radius: 50%; transition: left var(--dur-base); }
+  .switch.on::after { left: 16px; background: var(--graphite-1000); }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg-secondary); }
+  .check .box { width: 14px; height: 14px; border: 1px solid var(--ln-strong); border-radius: 2px; background: var(--bg-input); display: inline-flex; align-items: center; justify-content: center; }
+  .check.checked .box { background: var(--amber-300); border-color: var(--amber-300); }
+  .check.checked .box::after { content: ''; width: 6px; height: 9px; border-right: 2px solid var(--graphite-1000); border-bottom: 2px solid var(--graphite-1000); transform: rotate(45deg) translate(-1px, -1px); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="t">Inputs · text, search, switch, check</div>
+    <div class="s">focus = 2px amber · 4px radius</div>
+  </div>
+  <div class="grid">
+    <div class="field">
+      <label class="label">E-mail</label>
+      <input class="input" value="jan.novak@cez.cz">
+    </div>
+    <div class="field">
+      <label class="label">Heslo</label>
+      <input class="input focus" type="password" value="••••••••••">
+      <span class="help">Min. 12 znaků, 1 číslice</span>
+    </div>
+    <div class="field">
+      <label class="label">Hledat ve Watch Listu</label>
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.3-4.3"/></svg>
+        <input class="input" placeholder="Společnost, segment, region…">
+      </div>
+    </div>
+    <div class="field">
+      <label class="label">Token (chybný)</label>
+      <input class="input error" value="invalid-token-xyz">
+      <span class="help err">Token expiroval. Vyžádejte si nový.</span>
+    </div>
+    <div class="toggle">
+      <div class="switch on"></div>
+      <span style="font-size:13px; color: var(--fg-secondary)">Posílat e-mail při alertu</span>
+    </div>
+    <div class="check checked"><span class="box"></span>Sledovat Δ Q/Q</div>
+  </div>
+</body>
+</html>

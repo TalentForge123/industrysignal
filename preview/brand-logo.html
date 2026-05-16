@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Brand · Bloomberg-style</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 0; background: var(--bg-app); font-family: var(--font-sans); }
+  /* Bloomberg.com-style top strip: black bar, mono ticker chrome, sharp wordmark */
+  .strip {
+    background: #000;
+    border-bottom: 2px solid var(--amber-300);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: stretch;
+    height: 56px;
+  }
+  .brand-cell {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 18px;
+    border-right: 1px solid #1a1a1a;
+  }
+  .mark {
+    width: 28px; height: 28px;
+    background: var(--amber-300);
+    color: #000;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-serif); font-weight: 700; font-size: 22px;
+    font-style: italic; letter-spacing: -0.04em;
+  }
+  .wordmark {
+    font-family: var(--font-serif);
+    font-weight: 700; font-style: italic;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    color: #fff;
+  }
+  .wordmark .accent { color: var(--amber-300); }
+  .ticker {
+    display: flex; align-items: center; gap: 0;
+    overflow: hidden;
+    font-family: var(--font-mono);
+  }
+  .tick {
+    padding: 0 14px; height: 100%;
+    display: flex; align-items: center; gap: 8px;
+    border-right: 1px solid #1a1a1a;
+    font-size: 11px;
+    color: #9AA1AD;
+    letter-spacing: 0.04em;
+  }
+  .tick .sym { color: #fff; font-weight: 600; }
+  .tick .val { color: #fff; font-variant-numeric: tabular-nums; }
+  .tick .up { color: var(--signal-up); }
+  .tick .dn { color: var(--signal-down); }
+  .live-cell {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 18px;
+    border-left: 1px solid #1a1a1a;
+    font-family: var(--font-mono); font-size: 10px;
+    color: #fff; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .live-dot { width: 8px; height: 8px; background: var(--signal-down); border-radius: 50%; }
+
+  /* Editorial header line: KICKER · HEADLINE · TIMESTAMP */
+  .editorial {
+    background: var(--bg-app);
+    padding: 28px 36px 32px;
+    border-bottom: 1px solid var(--ln-divider);
+  }
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--amber-300);
+    margin-bottom: 12px;
+  }
+  .kicker::before {
+    content: ''; display: inline-block;
+    width: 18px; height: 1px; background: var(--amber-300);
+    margin-right: 10px; vertical-align: middle;
+  }
+  .headline {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: 28px;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--fg-primary);
+    max-width: 620px;
+    margin: 0 0 10px;
+  }
+  .byline {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    display: flex; gap: 14px; align-items: center;
+  }
+  .byline .sep::before { content: '·'; }
+
+  .notes {
+    padding: 18px 36px 24px;
+    font-family: var(--font-sans); font-size: 12px;
+    color: var(--fg-tertiary); line-height: 1.6;
+    border-top: 1px solid var(--ln-hairline);
+    display: grid; grid-template-columns: 110px 1fr; row-gap: 6px; column-gap: 14px;
+  }
+  .notes dt {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+  .notes dd { margin: 0; color: var(--fg-secondary); }
+  .notes dd strong { color: var(--fg-primary); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="strip">
+    <div class="brand-cell">
+      <div class="mark">B</div>
+      <div class="wordmark"><span class="accent">Industry</span>Signal</div>
+    </div>
+    <div class="ticker">
+      <div class="tick"><span class="sym">CEZ</span><span class="val">1,084.50</span><span class="up">+1.2%</span></div>
+      <div class="tick"><span class="sym">SKO</span><span class="val">  728.40</span><span class="dn">−2.4%</span></div>
+      <div class="tick"><span class="sym">VTK</span><span class="val">   42.18</span><span class="dn">−5.8%</span></div>
+      <div class="tick"><span class="sym">EUR/CZK</span><span class="val">24.82</span><span class="up">+0.04</span></div>
+    </div>
+    <div class="live-cell">
+      <span class="live-dot"></span>
+      LIVE · 14:32 CET
+    </div>
+  </div>
+
+  <div class="editorial">
+    <div class="kicker">Q2 2026 · Strojírenství</div>
+    <h1 class="headline">Marže ve zpracovatelském průmyslu klesly o 1,8 p.b. meziročně</h1>
+    <div class="byline">
+      <span>Redakce IndustrySignal</span>
+      <span class="sep"></span>
+      <span>14. května 2026</span>
+      <span class="sep"></span>
+      <span>5 min čtení</span>
+    </div>
+  </div>
+
+  <dl class="notes">
+    <dt>Mark</dt>
+    <dd>Sharp <strong>amber square + serif italic “B”</strong>. Nods to bloomberg.com's terminal/ticker chrome.</dd>
+    <dt>Wordmark</dt>
+    <dd>IBM Plex Serif <strong>Bold Italic</strong>. <strong>Industry</strong> in amber, <strong>Signal</strong> in white. The split mirrors editorial brands like Bloomberg / Reuters / FT.</dd>
+    <dt>Strip</dt>
+    <dd>Pure black bar, <strong>2px amber underline</strong>, mono ticker cells with hairline dividers.</dd>
+    <dt>Headline</dt>
+    <dd>Serif Bold for editorial titles; mono caps kicker; mono caps byline. No sentence-case marketing copy in the chrome.</dd>
+    <dt>Status</dt>
+    <dd style="color: var(--signal-warn)"><strong>Placeholder</strong> — replace if a real wordmark exists.</dd>
+  </dl>
+</body>
+</html>

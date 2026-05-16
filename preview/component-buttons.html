@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Buttons</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .header .t { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .header .s { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-muted); width: 80px; flex-shrink: 0; }
+  .btn {
+    font-family: var(--font-sans); font-size: 13px; font-weight: 500;
+    padding: 8px 14px; border-radius: var(--r-sm); border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  }
+  .btn-primary { background: var(--amber-300); color: var(--graphite-1000); }
+  .btn-primary.hover { background: var(--amber-400); }
+  .btn-secondary { background: var(--bg-card); color: var(--fg-primary); border-color: var(--ln-border); }
+  .btn-secondary.hover { background: var(--bg-card-hover); }
+  .btn-ghost { background: transparent; color: var(--fg-secondary); }
+  .btn-ghost.hover { background: var(--bg-card); color: var(--fg-primary); }
+  .btn-danger { background: transparent; color: var(--signal-down); border-color: rgba(226,92,92,0.4); }
+  .btn-disabled { background: var(--graphite-800); color: var(--graphite-500); cursor: not-allowed; }
+  .icon-btn { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--r-sm); background: transparent; color: var(--fg-tertiary); border: 1px solid transparent; cursor: pointer; }
+  .icon-btn.hover { background: var(--bg-card); color: var(--fg-primary); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="t">Buttons</div>
+    <div class="s">primary scarce · ghost default</div>
+  </div>
+  <div class="row"><span class="lbl">Primary</span>
+    <button class="btn btn-primary">Otevřít report</button>
+    <button class="btn btn-primary hover">Otevřít report</button>
+    <button class="btn btn-disabled">Otevřít report</button>
+  </div>
+  <div class="row"><span class="lbl">Secondary</span>
+    <button class="btn btn-secondary">Stáhnout PDF</button>
+    <button class="btn btn-secondary hover">Stáhnout PDF</button>
+  </div>
+  <div class="row"><span class="lbl">Ghost</span>
+    <button class="btn btn-ghost">Zrušit</button>
+    <button class="btn btn-ghost hover">Zrušit</button>
+    <button class="btn btn-danger">Odebrat z Watch Listu</button>
+  </div>
+  <div class="row"><span class="lbl">Icon</span>
+    <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.3-4.3"/></svg></button>
+    <button class="icon-btn hover"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+    <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg></button>
+  </div>
+</body>
+</html>

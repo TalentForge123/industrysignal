@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Watch List table</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .header .t { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .header .s { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+  .panel { background: var(--bg-card); border: 1px solid var(--ln-divider); border-radius: var(--r-md); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); font-weight: 500; padding: 10px 14px; border-bottom: 1px solid var(--ln-border); background: var(--graphite-900); }
+  th.right { text-align: right; }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--ln-hairline); font-family: var(--font-sans); font-size: 13px; color: var(--fg-secondary); }
+  tr:last-child td { border-bottom: none; }
+  tr.active { background: rgba(242,187,84,0.06); border-left: 2px solid var(--amber-300); }
+  tr.active td:first-child { padding-left: 12px; }
+  tr:hover { background: var(--bg-card-hover); }
+  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+  .up { color: var(--signal-up); }
+  .dn { color: var(--signal-down); }
+  .name { color: var(--fg-primary); font-weight: 500; }
+  .sub { color: var(--fg-muted); font-size: 11px; font-family: var(--font-mono); }
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+  .pill.up { background: var(--signal-up-bg); color: var(--signal-up); }
+  .pill.warn { background: var(--signal-warn-bg); color: var(--signal-warn); }
+  .pill.dn { background: var(--signal-down-bg); color: var(--signal-down); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="t">Watch List · table row</div>
+    <div class="s">active row = 2px amber border-left</div>
+  </div>
+  <div class="panel">
+    <table>
+      <thead><tr>
+        <th>Entita</th><th>Segment</th><th>Status</th><th class="right">Δ Q/Q</th><th class="right">Posl. alert</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="name">Škoda Auto a.s.</div><div class="sub">CZ · OEM</div></td>
+          <td>Automotive</td>
+          <td><span class="pill warn">Watch</span></td>
+          <td class="num dn">▼ −2,4 %</td>
+          <td class="num">14. 5.</td>
+        </tr>
+        <tr class="active">
+          <td><div class="name">ČEZ a.s.</div><div class="sub">CZ · Energetika</div></td>
+          <td>Energetika</td>
+          <td><span class="pill up">Online</span></td>
+          <td class="num up">▲ +1,2 %</td>
+          <td class="num">12. 5.</td>
+        </tr>
+        <tr>
+          <td><div class="name">Vítkovice Steel</div><div class="sub">CZ · Hutnictví</div></td>
+          <td>Hutnictví</td>
+          <td><span class="pill dn">Alert</span></td>
+          <td class="num dn">▼ −5,8 %</td>
+          <td class="num">14. 5.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

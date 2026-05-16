@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Spacing & radii</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .col h { display: block; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); margin-bottom: 12px; }
+  .scale { display: flex; flex-direction: column; gap: 4px; }
+  .row { display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--fg-tertiary); }
+  .row .name { width: 36px; }
+  .row .px { width: 32px; color: var(--fg-muted); }
+  .bar { height: 12px; background: var(--amber-300); border-radius: 1px; }
+  .radii { display: flex; gap: 12px; flex-wrap: wrap; }
+  .rsq { width: 56px; height: 56px; background: var(--bg-card); border: 1px solid var(--ln-border); display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--fg-tertiary); }
+</style>
+</head>
+<body>
+  <div class="col">
+    <h>Spacing · 4px base</h>
+    <div class="scale">
+      <div class="row"><span class="name">sp-1</span><span class="px">4</span><div class="bar" style="width:4px"></div></div>
+      <div class="row"><span class="name">sp-2</span><span class="px">8</span><div class="bar" style="width:8px"></div></div>
+      <div class="row"><span class="name">sp-3</span><span class="px">12</span><div class="bar" style="width:12px"></div></div>
+      <div class="row"><span class="name">sp-4</span><span class="px">16</span><div class="bar" style="width:16px"></div></div>
+      <div class="row"><span class="name">sp-5</span><span class="px">20</span><div class="bar" style="width:20px"></div></div>
+      <div class="row"><span class="name">sp-6</span><span class="px">24</span><div class="bar" style="width:24px"></div></div>
+      <div class="row"><span class="name">sp-7</span><span class="px">32</span><div class="bar" style="width:32px"></div></div>
+      <div class="row"><span class="name">sp-8</span><span class="px">40</span><div class="bar" style="width:40px"></div></div>
+      <div class="row"><span class="name">sp-9</span><span class="px">48</span><div class="bar" style="width:48px"></div></div>
+      <div class="row"><span class="name">sp-10</span><span class="px">64</span><div class="bar" style="width:64px"></div></div>
+      <div class="row"><span class="name">sp-11</span><span class="px">80</span><div class="bar" style="width:80px"></div></div>
+      <div class="row"><span class="name">sp-12</span><span class="px">96</span><div class="bar" style="width:96px"></div></div>
+    </div>
+  </div>
+  <div class="col">
+    <h>Radii · sharp by default</h>
+    <div class="radii">
+      <div class="rsq" style="border-radius:0">none</div>
+      <div class="rsq" style="border-radius:2px">2 · xs</div>
+      <div class="rsq" style="border-radius:4px">4 · sm</div>
+      <div class="rsq" style="border-radius:6px">6 · md</div>
+      <div class="rsq" style="border-radius:8px">8 · lg</div>
+      <div class="rsq" style="border-radius:12px">12 · xl</div>
+      <div class="rsq" style="border-radius:999px">pill</div>
+    </div>
+    <div style="margin-top: 18px; font-family: var(--font-sans); font-size: 12px; color: var(--fg-tertiary); line-height: 1.55; max-width: 280px;">
+      Inputs &amp; buttons → 4px. Cards → 6px. Modals → 8px. Status pills → 999px. Anything ≥ 12px is reserved for hero panels.
+    </div>
+  </div>
+</body>
+</html>

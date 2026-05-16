@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mono labels & tabular numbers</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+  .header .t { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .header .s { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .demo { border: 1px solid var(--ln-divider); border-radius: var(--r-md); padding: 14px 16px; background: var(--bg-card); }
+  .lbl { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); margin-bottom: 6px; }
+  .lbl-acc { color: var(--accent-text); }
+  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; color: var(--fg-primary); }
+  .big { font-size: 28px; line-height: 1.1; }
+  .delta-up { color: var(--signal-up); font-family: var(--font-mono); font-size: 12px; }
+  .delta-dn { color: var(--signal-down); font-family: var(--font-mono); font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 12px; }
+  th { font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; font-size: 10px; color: var(--fg-tertiary); text-align: right; padding: 6px 0; border-bottom: 1px solid var(--ln-border); }
+  th:first-child, td:first-child { text-align: left; }
+  td { padding: 6px 0; color: var(--fg-secondary); border-bottom: 1px solid var(--ln-hairline); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="t">Mono — labels & numerics</div>
+    <div class="s">IBM Plex Mono · tabular-nums</div>
+  </div>
+  <div class="grid">
+    <div class="demo">
+      <div class="lbl">Vývoj Q/Q</div>
+      <div class="big num">−1,8 <span class="delta-dn">p.b.</span></div>
+      <div class="lbl lbl-acc" style="margin-top:8px">Riziko: střední</div>
+    </div>
+    <div class="demo">
+      <table>
+        <thead><tr><th>Segment</th><th>Δ Q/Q</th><th>YTD</th></tr></thead>
+        <tbody>
+          <tr><td>Strojírenství</td><td>−1,8 %</td><td>−3,4 %</td></tr>
+          <tr><td>Energetika</td><td>+0,4 %</td><td>+1,2 %</td></tr>
+          <tr><td>Logistika</td><td>+2,1 %</td><td>+5,8 %</td></tr>
+          <tr><td>Chemie</td><td>−0,6 %</td><td>−2,0 %</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

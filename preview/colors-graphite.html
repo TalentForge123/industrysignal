@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Graphite scale</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); }
+  .row { display: grid; grid-template-columns: repeat(13, 1fr); gap: 0; border: 1px solid var(--ln-divider); border-radius: var(--r-md); overflow: hidden; }
+  .swatch { aspect-ratio: 1 / 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 6px 6px; gap: 2px; }
+  .swatch .lbl { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.04em; color: var(--graphite-300); }
+  .swatch .val { font-family: var(--font-mono); font-size: 9px; color: var(--graphite-500); }
+  .swatch.dark .lbl, .swatch.dark .val { color: var(--graphite-400); }
+  .swatch.light .lbl { color: var(--graphite-900); }
+  .swatch.light .val { color: var(--graphite-600); }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .header .t { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .header .s { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="t">Graphite — base scale</div>
+    <div class="s">13 steps · cool / blue-shifted</div>
+  </div>
+  <div class="row">
+    <div class="swatch dark" style="background:#06080B"><div class="lbl">1000</div><div class="val">06080B</div></div>
+    <div class="swatch dark" style="background:#0B0E13"><div class="lbl">950</div><div class="val">0B0E13</div></div>
+    <div class="swatch dark" style="background:#11151C"><div class="lbl">900</div><div class="val">11151C</div></div>
+    <div class="swatch dark" style="background:#161B23"><div class="lbl">850</div><div class="val">161B23</div></div>
+    <div class="swatch dark" style="background:#1C222C"><div class="lbl">800</div><div class="val">1C222C</div></div>
+    <div class="swatch dark" style="background:#232A36"><div class="lbl">750</div><div class="val">232A36</div></div>
+    <div class="swatch dark" style="background:#2C3441"><div class="lbl">700</div><div class="val">2C3441</div></div>
+    <div class="swatch dark" style="background:#3A4250"><div class="lbl">600</div><div class="val">3A4250</div></div>
+    <div class="swatch dark" style="background:#525A68"><div class="lbl">500</div><div class="val">525A68</div></div>
+    <div class="swatch dark" style="background:#737B89"><div class="lbl">400</div><div class="val">737B89</div></div>
+    <div class="swatch light" style="background:#9AA1AD"><div class="lbl">300</div><div class="val">9AA1AD</div></div>
+    <div class="swatch light" style="background:#C2C7CF"><div class="lbl">200</div><div class="val">C2C7CF</div></div>
+    <div class="swatch light" style="background:#E2E5EA"><div class="lbl">100</div><div class="val">E2E5EA</div></div>
+  </div>
+</body>
+</html>

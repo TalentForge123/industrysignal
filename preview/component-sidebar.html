@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sidebar nav</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .header .t { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .header .s { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+  .frame { background: var(--bg-panel); border: 1px solid var(--ln-divider); border-radius: var(--r-md); padding: 18px 0 18px; width: 240px; }
+  .brand { padding: 0 18px 18px; border-bottom: 1px solid var(--ln-divider); display: flex; align-items: center; gap: 10px; }
+  .brand .mark { width: 16px; height: 16px; background: var(--amber-300); position: relative; flex-shrink: 0; }
+  .brand .mark::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--amber-400); }
+  .brand .wm { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.12em; color: var(--fg-primary); }
+  .group { padding: 16px 12px 4px; }
+  .group-title { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); padding: 0 8px 6px; }
+  .item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-sm); color: var(--fg-secondary); font-size: 13px; cursor: pointer; position: relative; border-left: 2px solid transparent; }
+  .item:hover { background: var(--bg-card); color: var(--fg-primary); }
+  .item.active { background: rgba(242,187,84,0.08); color: var(--fg-primary); border-left-color: var(--amber-300); padding-left: 10px; }
+  .item svg { color: var(--fg-tertiary); flex-shrink: 0; }
+  .item.active svg { color: var(--amber-300); }
+  .badge { margin-left: auto; font-family: var(--font-mono); font-size: 10px; padding: 1px 6px; border-radius: 999px; background: var(--signal-down); color: var(--graphite-1000); font-weight: 600; }
+  .lay { display: flex; gap: 32px; align-items: flex-start; }
+  .notes { font-family: var(--font-sans); font-size: 12px; color: var(--fg-tertiary); line-height: 1.6; max-width: 240px; }
+  .notes strong { color: var(--fg-secondary); font-weight: 500; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="t">Sidebar · primary nav</div>
+    <div class="s">240px fixed · "you are here"</div>
+  </div>
+  <div class="lay">
+    <div class="frame">
+      <div class="brand">
+        <span class="mark"></span>
+        <span class="wm">INDUSTRYSIGNAL</span>
+      </div>
+      <div class="group">
+        <div class="group-title">Reporty</div>
+        <div class="item active">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+          Aktuální report
+        </div>
+        <div class="item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+          Archiv
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">Sledování</div>
+        <div class="item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          Watch List
+        </div>
+        <div class="item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          Alerty
+          <span class="badge">3</span>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      Active: <strong>2px amber border-left</strong> + <code style="font-family:var(--font-mono); color:var(--accent-text); font-size:11px;">accent-soft</code> background.<br><br>
+      Hover: bg shifts <strong>one step lighter</strong> on the graphite scale.<br><br>
+      Alert badge uses <strong>signal-down</strong> red, only when count &gt; 0.
+    </div>
+  </div>
+</body>
+</html>

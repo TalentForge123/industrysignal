@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Borders & elevation</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .header .t { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .header .s { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .box { background: var(--bg-card); padding: 14px; height: 90px; display: flex; flex-direction: column; justify-content: space-between; }
+  .lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .desc { font-family: var(--font-sans); font-size: 11px; color: var(--fg-tertiary); line-height: 1.4; }
+  .b1 { border: 1px solid var(--ln-hairline); border-radius: var(--r-md); }
+  .b2 { border: 1px solid var(--ln-divider); border-radius: var(--r-md); }
+  .b3 { border: 1px solid var(--ln-border); border-radius: var(--r-md); }
+  .b4 { border: 1px solid var(--ln-strong); border-radius: var(--r-md); }
+  .e1 { border: 1px solid var(--ln-divider); border-radius: var(--r-md); box-shadow: var(--elev-1); }
+  .e2 { border: 1px solid var(--ln-divider); border-radius: var(--r-md); box-shadow: var(--elev-2); }
+  .e3 { border: 1px solid var(--ln-divider); border-radius: var(--r-md); box-shadow: var(--elev-3); }
+  .eg { border: 1px solid transparent; border-radius: var(--r-md); box-shadow: var(--elev-glow-amber); background: var(--bg-card); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="t">Borders &amp; elevation</div>
+    <div class="s">hairlines first · shadows scarce</div>
+  </div>
+  <div class="grid" style="margin-bottom: 12px">
+    <div class="box b1"><span class="lbl">Hairline</span><span class="desc">whitespace-soft div</span></div>
+    <div class="box b2"><span class="lbl">Divider</span><span class="desc">default card edge</span></div>
+    <div class="box b3"><span class="lbl">Border</span><span class="desc">stronger separator</span></div>
+    <div class="box b4"><span class="lbl">Strong</span><span class="desc">input · table edge</span></div>
+  </div>
+  <div class="grid">
+    <div class="box e1"><span class="lbl">Elev 1</span><span class="desc">resting card · rare</span></div>
+    <div class="box e2"><span class="lbl">Elev 2</span><span class="desc">menu / dropdown</span></div>
+    <div class="box e3"><span class="lbl">Elev 3</span><span class="desc">modal overlay</span></div>
+    <div class="box eg"><span class="lbl" style="color:var(--accent-text)">Glow · amber</span><span class="desc">live alert · 1 at a time</span></div>
+  </div>
+</body>
+</html>

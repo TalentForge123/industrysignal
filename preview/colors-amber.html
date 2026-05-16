@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Signal amber</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .header .t { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .header .s { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+  .row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0; border: 1px solid var(--ln-divider); border-radius: var(--r-md); overflow: hidden; }
+  .swatch { aspect-ratio: 1.4 / 1; display: flex; flex-direction: column; justify-content: space-between; padding: 10px 10px; }
+  .swatch .lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; }
+  .swatch .val { font-family: var(--font-mono); font-size: 10px; }
+  .swatch.dark .lbl { color: var(--amber-100); } .swatch.dark .val { color: var(--amber-200); }
+  .swatch.light .lbl { color: var(--graphite-1000); } .swatch.light .val { color: var(--graphite-800); }
+  .pill { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; align-self: flex-start; padding: 2px 6px; border-radius: var(--r-pill); background: rgba(0,0,0,0.25); color: inherit; }
+  .light .pill { background: rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="t">Signal amber — accent</div>
+    <div class="s">300 = brand · scarce by rule</div>
+  </div>
+  <div class="row">
+    <div class="swatch dark" style="background:#6E4A00"><span class="pill">700</span><div class="val">6E4A00</div></div>
+    <div class="swatch dark" style="background:#946400"><span class="pill">600</span><div class="val">946400</div></div>
+    <div class="swatch light" style="background:#C68500"><span class="pill">500</span><div class="val">C68500</div></div>
+    <div class="swatch light" style="background:#E8A52B"><span class="pill">400</span><div class="val">E8A52B</div></div>
+    <div class="swatch light" style="background:#F2BB54"><span class="pill">300 · brand</span><div class="val">F2BB54</div></div>
+    <div class="swatch light" style="background:#F7CE7E"><span class="pill">200</span><div class="val">F7CE7E</div></div>
+    <div class="swatch light" style="background:#FBE3B3"><span class="pill">100</span><div class="val">FBE3B3</div></div>
+  </div>
+</body>
+</html>

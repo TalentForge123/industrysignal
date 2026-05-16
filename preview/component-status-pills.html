@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Status pills</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .header .t { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .header .s { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .row-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-muted); width: 80px; flex-shrink: 0; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: var(--r-pill);
+    border: 1px solid transparent;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .pill.up { background: var(--signal-up-bg); color: var(--signal-up); }
+  .pill.up .dot { background: var(--signal-up); }
+  .pill.down { background: var(--signal-down-bg); color: var(--signal-down); }
+  .pill.down .dot { background: var(--signal-down); }
+  .pill.warn { background: var(--signal-warn-bg); color: var(--signal-warn); }
+  .pill.warn .dot { background: var(--signal-warn); }
+  .pill.info { background: var(--signal-info-bg); color: var(--signal-info); }
+  .pill.info .dot { background: var(--signal-info); }
+  .pill.neutral { background: var(--graphite-800); color: var(--fg-tertiary); border-color: var(--ln-border); }
+  .pill.neutral .dot { background: var(--fg-tertiary); }
+  .pill.solid-amber { background: var(--amber-300); color: var(--graphite-1000); }
+  .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--signal-up); position: relative; }
+  .pulse::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1px solid var(--signal-up); animation: p 1.6s ease-out infinite; opacity: 0.6; }
+  @keyframes p { 0% { transform: scale(0.6); opacity: 0.7; } 100% { transform: scale(1.8); opacity: 0; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="t">Status pills</div>
+    <div class="s">mono caps · paired bg variant</div>
+  </div>
+  <div class="row"><span class="row-label">Signal</span>
+    <span class="pill up"><span class="dot"></span>Online</span>
+    <span class="pill down"><span class="dot"></span>Alert</span>
+    <span class="pill warn"><span class="dot"></span>Watch</span>
+    <span class="pill info"><span class="dot"></span>Info</span>
+    <span class="pill neutral"><span class="dot"></span>Klidno</span>
+  </div>
+  <div class="row"><span class="row-label">Δ Q/Q</span>
+    <span class="pill up">▲ +2,1 %</span>
+    <span class="pill down">▼ −1,8 %</span>
+    <span class="pill warn">≈ 0,0 %</span>
+  </div>
+  <div class="row"><span class="row-label">Riziko</span>
+    <span class="pill up">Nízké</span>
+    <span class="pill warn">Střední</span>
+    <span class="pill down">Vysoké</span>
+  </div>
+  <div class="row"><span class="row-label">Live</span>
+    <span class="pill up"><span class="pulse"></span>Live · Q2 2026</span>
+    <span class="pill solid-amber">Nový report</span>
+  </div>
+</body>
+</html>

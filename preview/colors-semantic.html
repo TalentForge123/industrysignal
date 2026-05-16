@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Semantic colors</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-app); }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .header .t { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-tertiary); }
+  .header .s { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .item { display: flex; align-items: stretch; border: 1px solid var(--ln-divider); border-radius: var(--r-md); overflow: hidden; height: 64px; }
+  .chip { width: 64px; flex: 0 0 auto; }
+  .body { flex: 1; padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; gap: 4px; background: var(--bg-card); }
+  .name { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-secondary); }
+  .role { font-family: var(--font-sans); font-size: 12px; color: var(--fg-tertiary); }
+  .hex { font-family: var(--font-mono); font-size: 10px; color: var(--fg-muted); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="t">Semantic — restrained signals</div>
+    <div class="s">paired bg variants for filled pills</div>
+  </div>
+  <div class="grid">
+    <div class="item">
+      <div class="chip" style="background:#4FB07A"></div>
+      <div class="body"><div class="name" style="color:#4FB07A">Up · positive</div><div class="role">positive Δ, online, OK</div><div class="hex">#4FB07A · bg #14271E</div></div>
+    </div>
+    <div class="item">
+      <div class="chip" style="background:#E25C5C"></div>
+      <div class="body"><div class="name" style="color:#E25C5C">Down · alert</div><div class="role">negative Δ, alert, error</div><div class="hex">#E25C5C · bg #2A1518</div></div>
+    </div>
+    <div class="item">
+      <div class="chip" style="background:#E8A52B"></div>
+      <div class="body"><div class="name" style="color:#E8A52B">Warn · watch</div><div class="role">pending, watch, caution</div><div class="hex">#E8A52B · bg #2A1F0A</div></div>
+    </div>
+    <div class="item">
+      <div class="chip" style="background:#5C9FE2"></div>
+      <div class="body"><div class="name" style="color:#5C9FE2">Info</div><div class="role">informational, neutral</div><div class="hex">#5C9FE2 · bg #0F1E2A</div></div>
+    </div>
+  </div>
+</body>
+</html>
