@@ -12,6 +12,8 @@ type Entry = string | string[] | ((...args: unknown[]) => string);
 const cs: Record<string, Entry> = {
   // common
   app_subtitle: 'Klientský portál',
+  landing_tagline:
+    'B2B zpravodajská platforma pro český průmysl. Je to motor pro vaši expanzi, který vám pomůže přenést a napodobit úspěšné konkurenční vztahy na nových trzích. Nabízí kvartální přehledy, hodnocení rizikovosti dodavatelů a okamžitá upozornění na změny.',
   session_active: 'Session aktivní',
   feed_live: 'Feed · Live',
   latency: 'Latence',
@@ -272,6 +274,8 @@ const cs: Record<string, Entry> = {
 
 const en: Record<string, Entry> = {
   app_subtitle: 'Client portal',
+  landing_tagline:
+    'A B2B intelligence platform designed for Czech industry. A mission engine for expansion and replicating competitive relationships, featuring quarterly reports, supplier risk scores, and real-time alerts.',
   session_active: 'Session active',
   feed_live: 'Feed · Live',
   latency: 'Latency',

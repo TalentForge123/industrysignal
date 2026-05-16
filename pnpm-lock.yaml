@@ -56,7 +56,14 @@ importers:
   packages/db: {}
 
   packages/i18n:
+    dependencies:
+      react:
+        specifier: ^18.3.0
+        version: 18.3.1
     devDependencies:
+      '@types/react':
+        specifier: ^18.3.12
+        version: 18.3.28
       typescript:
         specifier: ^5.6.3
         version: 5.9.3

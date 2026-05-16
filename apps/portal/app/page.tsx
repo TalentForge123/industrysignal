@@ -1,14 +1,23 @@
+'use client';
+
 // Landing — Sprint 1 smoke test.
 // Proves that workspace packages (tokens, ui, i18n) resolve through Next's
 // transpilePackages, that webfonts load, and that the editorial DNA holds in
-// a real bundler (not the Babel CDN). Wordmark + a row of primitives only —
-// no auth, no data, no views. Those land in subsequent commits.
+// a real bundler (not the Babel CDN). Wordmark + tagline + a row of
+// primitives only — no auth, no data, no views. Those land in subsequent
+// commits.
+//
+// Marked 'use client' because the tagline reacts to the current language
+// via useLang(). The language switcher itself arrives with the TopBar port
+// in Sprint 5; until then the page renders in the persisted (or default
+// 'cs') language.
 
 import { Pill, Tile, MonoLabel, Button } from '@industrysignal/ui';
-import { t, DEFAULT_LANG } from '@industrysignal/i18n';
+import { t } from '@industrysignal/i18n';
+import { useLang } from '@industrysignal/i18n/client';
 
 export default function HomePage() {
-  const lang = DEFAULT_LANG;
+  const [lang] = useLang();
   return (
     <main
       style={{
@@ -71,8 +80,7 @@ export default function HomePage() {
             color: 'var(--fg-secondary)',
           }}
         >
-          B2B intelligence platforma pro český průmysl. Mission engine pro expanzi a
-          replikaci konkurenčních vztahů, kvartální reporty, supplier risk score, alerty.
+          {t(lang, 'landing_tagline')}
         </p>
       </section>
 
