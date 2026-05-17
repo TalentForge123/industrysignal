@@ -10,3 +10,8 @@
 
 export * as schema from './schema';
 export { createDb, type Database, type CreateDbOptions } from './client';
+export {
+  upsertCompanyFromAres,
+  type CompanyRow,
+  type UpsertResult,
+} from './queries/companies';

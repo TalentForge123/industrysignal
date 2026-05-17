@@ -15,12 +15,15 @@
 import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
+  date,
+  index,
   integer,
   jsonb,
   pgTable,
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
 // ============================================================
@@ -261,6 +264,130 @@ export const sources = pgTable('source', {
 });
 
 // ============================================================
+// COMPANIES — latest known snapshot per (country, registry id).
+// ============================================================
+//
+// Pragmatic, Sprint-2 shape per HANDOFF §8 (Week 2). The canonical
+// entities / entity_identities / entity_links graph from §15 lands with
+// the Mission engine; this table is the single-country, single-source
+// stepping stone Watch List and the diff worker (Week 3) build on.
+//
+// `country_iso` + `registry_id` is the natural key (IČO for CZ, HRB for
+// DE, KRS for PL, ...). Synthetic UUID id keeps cross-table FKs stable
+// when (very rarely) a registry reassigns an identifier.
+//
+// `raw` keeps the full upstream JSON for audit + future re-extraction
+// without re-fetching. `source_key` is intentionally a plain text column,
+// not an FK to `source.key` — `sources` is admin-managed metadata and
+// shouldn't be on the hot path for an upsert from a worker.
+
+export const companies = pgTable(
+  'company',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    countryIso: text('country_iso').notNull().default('CZ'),
+    // Stable national identifier: IČO (CZ), HRB-number (DE), KRS (PL), ...
+    registryId: text('registry_id').notNull(),
+    // Stable upstream source key — e.g. 'ares', 'handelsregister', 'krs'.
+    // Matches `source.key` but kept unconstrained on purpose (see header).
+    sourceKey: text('source_key').notNull(),
+
+    legalName: text('legal_name').notNull(),
+    // Alternate trade names from `dalsiUdaje` (ARES) or equivalents.
+    // Stored as text[] so a GIN index can answer "any name contains" lookups
+    // without unpacking JSONB.
+    altNames: text('alt_names').array().notNull().default(sql`'{}'::text[]`),
+
+    // Legal form, registry-local code. ARES: pravniForma ('121' = a.s.).
+    // Human-readable label is derived in app code from a static lookup.
+    legalFormCode: text('legal_form_code'),
+    vatId: text('vat_id'), // DIČ for CZ, USt-IdNr for DE, ...
+
+    // Address — structured + a human-readable line, both kept so callers
+    // can render quickly and filter precisely.
+    addressLine: text('address_line'),
+    addressStructured: jsonb('address_structured'),
+    regionCode: text('region_code'),
+    regionName: text('region_name'),
+    districtCode: text('district_code'),
+    districtName: text('district_name'),
+    postalCode: text('postal_code'),
+
+    // CZ-NACE 2008 (and equivalents). Array so we can index with GIN and
+    // answer `naceCodes @> ARRAY['29100']` segment queries in O(log n).
+    naceCodes: text('nace_codes').array().notNull().default(sql`'{}'::text[]`),
+    primaryNace: text('primary_nace'),
+
+    foundedAt: date('founded_at'),
+    // Upstream "last modified" timestamp (ARES: datumAktualizace). Distinct
+    // from `last_fetched_at`, which is when *we* fetched it.
+    upstreamUpdatedAt: date('upstream_updated_at'),
+
+    // Per-registry status flags from upstream. ARES: seznamRegistraci.
+    // JSONB keeps shape flexibility across country connectors.
+    registryStatus: jsonb('registry_status'),
+    primarySourceRegistry: text('primary_source_registry'), // ARES: primarniZdroj
+    isActive: boolean('is_active').notNull().default(true),
+
+    raw: jsonb('raw').notNull(),
+    // SHA-256 of canonicalized snapshot — cheap equality check for the
+    // diff worker (Week 3) so it can skip Postgres writes when nothing
+    // material changed since the last fetch.
+    contentHash: text('content_hash').notNull(),
+
+    fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+    // Updated on every successful fetch even when contentHash is unchanged;
+    // lets us distinguish "stale upstream" from "we haven't looked".
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (t) => ({
+    countryRegistryUnique: uniqueIndex('company_country_registry_unique').on(
+      t.countryIso,
+      t.registryId,
+    ),
+    naceGin: index('company_nace_gin').using('gin', t.naceCodes),
+    regionIdx: index('company_region_idx').on(t.countryIso, t.regionCode),
+  }),
+);
+
+// Append-only log of upstream snapshots — feeds the diff worker (Week 3,
+// HANDOFF §7) which compares consecutive rows per company and emits
+// alerts on material changes (statutory bodies, address, NACE, status).
+// `content_hash` is duplicated on `company` so the worker can decide
+// whether to insert here without re-reading the snapshot blob.
+export const companySnapshots = pgTable(
+  'company_snapshot',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    companyId: text('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    sourceKey: text('source_key').notNull(),
+    fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+    raw: jsonb('raw').notNull(),
+    contentHash: text('content_hash').notNull(),
+    // Set by the diff worker after comparison against the previous snapshot.
+    // Shape: { changed: string[], previous_hash: string | null }. Null until
+    // the worker has processed this row.
+    diff: jsonb('diff'),
+  },
+  (t) => ({
+    companyFetchedIdx: index('company_snapshot_company_fetched_idx').on(
+      t.companyId,
+      t.fetchedAt,
+    ),
+  }),
+);
+
+// ============================================================
 // RELATIONS — Drizzle query-builder JOIN support.
 // ============================================================
 
@@ -314,5 +441,16 @@ export const alertsRelations = relations(alerts, ({ one }) => ({
   watchlist: one(watchlists, {
     fields: [alerts.watchlistId],
     references: [watchlists.id],
+  }),
+}));
+
+export const companiesRelations = relations(companies, ({ many }) => ({
+  snapshots: many(companySnapshots),
+}));
+
+export const companySnapshotsRelations = relations(companySnapshots, ({ one }) => ({
+  company: one(companies, {
+    fields: [companySnapshots.companyId],
+    references: [companies.id],
   }),
 }));

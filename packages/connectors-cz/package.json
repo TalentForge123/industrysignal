@@ -1,0 +1,22 @@
+{
+  "name": "@industrysignal/connectors-cz",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Czech-Republic data-source connectors. Per HANDOFF §3.2 — ARES (active), Justice / ISIR / Hlídač státu (later in Sprint 2). Implements a subset of the CountryConnector contract from §14 so adding new countries doesn't require changes here.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ares": "./src/ares/index.ts"
+  },
+  "files": ["src/**"],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
+  }
+}

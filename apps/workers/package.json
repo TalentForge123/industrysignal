@@ -2,8 +2,20 @@
   "name": "@industrysignal/workers",
   "version": "0.0.0",
   "private": true,
-  "description": "Background workers — scrapers, alert diff engine, PDF generation, mission resolution pipeline (HANDOFF §13, §15.5, §16). Placeholder until Sprint 2.",
+  "description": "Background workers — scrapers, alert diff engine, PDF generation, mission resolution pipeline (HANDOFF §13, §15.5, §16).",
   "scripts": {
-    "dev": "echo 'workers placeholder — first connectors land in Sprint 2 (CSU/CNB/ARES/ISIR)'"
+    "dev": "echo 'workers — Sprint 2 CLI entrypoints under src/cli/. Inngest cron wiring lands later in Week 2.'",
+    "ares:fetch": "tsx src/cli/ares-fetch.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@industrysignal/connectors-cz": "workspace:*",
+    "@industrysignal/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "dotenv": "^16.4.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
   }
 }

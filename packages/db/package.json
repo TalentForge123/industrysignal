@@ -10,7 +10,10 @@
     "./schema": "./src/schema.ts",
     "./client": "./src/client.ts"
   },
-  "files": ["src/**", "drizzle/**"],
+  "files": [
+    "src/**",
+    "drizzle/**"
+  ],
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate.ts",
@@ -19,7 +22,8 @@
     "db:check": "drizzle-kit check"
   },
   "dependencies": {
-    "drizzle-orm": "^0.36.4",
+    "@industrysignal/connectors-cz": "workspace:*",
+    "drizzle-orm": "^0.38.4",
     "postgres": "^3.4.5"
   },
   "devDependencies": {

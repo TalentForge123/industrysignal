@@ -36,5 +36,9 @@ export function createDb(databaseUrl: string, options: CreateDbOptions = {}) {
     connect_timeout: options.connectTimeout ?? 10,
     prepare: false,
   });
-  return drizzle(client, { schema, casing: 'snake_case' });
+  // Note: schema columns already declare explicit snake_case names via
+  // `text('country_iso')` etc., so no `casing` option here. Passing
+  // `casing: 'snake_case'` triggers a known drizzle-orm type-inference
+  // bug that strips default-bearing columns from the Insert type.
+  return drizzle(client, { schema });
 }
