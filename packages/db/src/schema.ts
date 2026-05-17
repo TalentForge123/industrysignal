@@ -388,6 +388,84 @@ export const companySnapshots = pgTable(
 );
 
 // ============================================================
+// INSOLVENCY — events from the Czech Insolvency Register (ISIR).
+// ============================================================
+//
+// One row per insolvency case as exposed by ISIR_CUZK_WS
+// (HANDOFF §3.2). The natural key is the Czech "spisová značka":
+// (court senate, kind, sequence number, year) — e.g. INS 628/2011 at
+// senate 60. We also denormalize debtor IČO so the Watch List can
+// answer "is X currently in insolvency?" without a JOIN.
+//
+// `case_status` carries the upstream `druhStavKonkursu` verbatim — the
+// list of states (KONKURS / REORGANIZACE / ODDLUŽENÍ / NABYTÍ PM
+// ZAHÁJENÍ ÚPADKU / ZASTAVENÍ / ...) is large and the values are
+// already Czech short codes that map cleanly to UI labels.
+//
+// As with `company`, raw JSON is preserved for audit + re-extraction,
+// content_hash drives idempotent re-syncs, and last_seen_at separates
+// "ISIR says no change" from "we haven't asked in a while".
+
+export const insolvencyEvents = pgTable(
+  'insolvency_event',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    countryIso: text('country_iso').notNull().default('CZ'),
+    sourceKey: text('source_key').notNull(), // 'isir' for now
+
+    // Debtor identifiers — at least one of these is set (legal entity ⇒
+    // ic, individual ⇒ rc/jméno+datumNarození). For Watch List use we
+    // primarily index on ic.
+    debtorIco: text('debtor_ico'),
+    debtorRc: text('debtor_rc'), // birth number — only for natural persons
+    debtorName: text('debtor_name'),
+    debtorAddress: jsonb('debtor_address'),
+
+    // Spisová značka components — composite natural key.
+    caseCourt: text('case_court'), // nazevOrganizace
+    caseSenate: integer('case_senate').notNull(), // cisloSenatu
+    caseKind: text('case_kind').notNull(), // druhVec — 'INS','KSCB',...
+    caseNumber: integer('case_number').notNull(), // bcVec
+    caseYear: integer('case_year').notNull(), // rocnik
+
+    caseStatus: text('case_status'), // druhStavKonkursu
+    caseDetailUrl: text('case_detail_url'), // urlDetailRizeni
+    otherDebtorsInCase: boolean('other_debtors_in_case').notNull().default(false),
+
+    bankruptcyStartedAt: date('bankruptcy_started_at'), // datumPmZahajeniUpadku
+    bankruptcyEndedAt: date('bankruptcy_ended_at'), // datumPmUkonceniUpadku
+
+    raw: jsonb('raw').notNull(),
+    contentHash: text('content_hash').notNull(),
+    // Upstream clock from `casSynchronizace`. ISIR_CUZK_WS exposes a
+    // read replica synced hourly — surfacing this lets the UI label
+    // "data is up to ~1h fresh" honestly.
+    upstreamSyncedAt: timestamp('upstream_synced_at', { withTimezone: true }),
+
+    fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (t) => ({
+    // The composite "spisová značka" — globally unique within CZ.
+    caseUnique: uniqueIndex('insolvency_event_case_unique').on(
+      t.countryIso,
+      t.caseKind,
+      t.caseSenate,
+      t.caseNumber,
+      t.caseYear,
+    ),
+    debtorIcoIdx: index('insolvency_event_debtor_ico_idx').on(t.countryIso, t.debtorIco),
+    statusIdx: index('insolvency_event_status_idx').on(t.caseStatus),
+  }),
+);
+
+// ============================================================
 // RELATIONS — Drizzle query-builder JOIN support.
 // ============================================================
 

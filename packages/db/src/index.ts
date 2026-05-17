@@ -15,3 +15,9 @@ export {
   type CompanyRow,
   type UpsertResult,
 } from './queries/companies';
+export {
+  upsertInsolvencyEvents,
+  type InsolvencyEventRow,
+  type UpsertEventResult,
+  type UpsertInsolvencyResult,
+} from './queries/insolvency';
