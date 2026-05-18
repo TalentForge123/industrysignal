@@ -28,6 +28,16 @@ export const authConfig = {
       redirect.searchParams.set('callbackUrl', nextUrl.pathname + nextUrl.search);
       return Response.redirect(redirect);
     },
+    // JWT strategy means the session callback only receives `token`,
+    // not `user`. We surface `token.sub` (the standard JWT subject =
+    // user id from the adapter) onto `session.user.id` so server code
+    // can read it without re-fetching.
+    session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
   },
   providers: [],
 } satisfies NextAuthConfig;

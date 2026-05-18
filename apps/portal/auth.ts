@@ -10,6 +10,7 @@ import { schema } from '@industrysignal/db';
 import authConfig from './auth.config';
 import { db } from './lib/db';
 import { sendMagicLink } from './lib/mail';
+import { getOrCreateDefaultOrgForUser } from './lib/orgs';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -32,4 +33,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     },
   ],
+  events: {
+    // Fires exactly once per user, when the adapter inserts their row.
+    // We provision a personal org + admin role + default watchlist
+    // synchronously so the very first call to /portal/* already has
+    // org-scoped data to render.
+    async createUser({ user }) {
+      if (!user.id) return;
+      await getOrCreateDefaultOrgForUser({
+        userId: user.id,
+        email: user.email ?? null,
+        displayName: user.name ?? null,
+      });
+    },
+  },
 });
