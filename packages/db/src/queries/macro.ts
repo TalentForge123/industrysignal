@@ -31,7 +31,7 @@ export interface UpsertMacroResult {
   observationsUnchanged: number;
 }
 
-interface EnsureIndicatorArgs {
+export interface IndicatorMeta {
   indicatorKey: string;
   sourceKey: string;
   nameCs: string;
@@ -40,9 +40,20 @@ interface EnsureIndicatorArgs {
   periodKind: 'daily' | 'monthly' | 'quarterly' | 'yearly';
 }
 
+export interface MacroObservationInput {
+  /** Canonical period label — 'YYYY-MM-DD' (daily), 'YYYY-MM' (monthly), 'YYYY-Qn' (quarterly), 'YYYY' (yearly). */
+  period: string;
+  /** First day of the period as ISO 'YYYY-MM-DD'. */
+  observedAt: string;
+  /** Decimal value — stored as Postgres NUMERIC, exchanged as string. */
+  value: number;
+  /** Raw upstream payload for audit. Optional. */
+  raw?: unknown;
+}
+
 async function ensureIndicator(
   tx: Tx,
-  args: EnsureIndicatorArgs,
+  args: IndicatorMeta,
 ): Promise<{ indicator: MacroIndicatorRow; created: boolean }> {
   const existing = await tx
     .select()
@@ -67,37 +78,35 @@ async function ensureIndicator(
   return { indicator: inserted, created: true };
 }
 
-export async function upsertCnbFxSnapshot(
+/**
+ * Generic upsert for a single (indicator, observations[]) batch — the
+ * shared persistence path for every macro connector (ČNB FX, ČSÚ, future
+ * Eurostat). The indicator row is auto-seeded on first sight; observation
+ * rows are idempotent on (indicator_id, period); the indicator's
+ * denormalized `latest_*` cache is refreshed when the batch contains a
+ * period newer than what we'd previously seen.
+ */
+export async function upsertMacroObservations(
   db: Database,
-  snapshot: CnbFxSnapshot,
+  meta: IndicatorMeta,
+  observations: MacroObservationInput[],
+  options: { fetchedAt?: Date } = {},
 ): Promise<UpsertMacroResult> {
-  const fetchedAt = new Date(snapshot.fetchedAt);
+  const fetchedAt = options.fetchedAt ?? new Date();
 
   return db.transaction(async (tx) => {
-    let indicatorsCreated = 0;
+    const { indicator, created } = await ensureIndicator(tx, meta);
     let observationsInserted = 0;
     let observationsUpdated = 0;
     let observationsUnchanged = 0;
+    let latestObservedAt = indicator.latestObservedAt;
+    let latestValue: string | null = indicator.latestValue;
+    let latestPeriod: string | null = indicator.latestPeriod;
 
-    for (const obs of snapshot.observations) {
-      const code = obs.code.toUpperCase();
-      const indicatorKey = `cz.fx.${code.toLowerCase()}_czk`;
-      const { indicator, created } = await ensureIndicator(tx, {
-        indicatorKey,
-        sourceKey: snapshot.sourceKey,
-        nameCs: `Kurz ${code}/CZK`,
-        nameEn: `${code}/CZK exchange rate`,
-        // Always per-single-foreign-unit (the connector already
-        // normalized amount=100 currencies — see cnb/normalize.ts).
-        unit: 'CZK',
-        periodKind: 'daily',
-      });
-      if (created) indicatorsCreated++;
-
-      const period = obs.observedAt; // ISO 'YYYY-MM-DD' — period-key for daily.
+    for (const obs of observations) {
       // Postgres NUMERIC is exchanged as string in drizzle — preserves
       // the upstream decimal exactly with no float drift.
-      const valueStr = obs.rate.toString();
+      const valueStr = obs.value.toString();
 
       const existingObs = await tx
         .select()
@@ -105,7 +114,7 @@ export async function upsertCnbFxSnapshot(
         .where(
           and(
             eq(macroObservations.indicatorId, indicator.id),
-            eq(macroObservations.period, period),
+            eq(macroObservations.period, obs.period),
           ),
         )
         .limit(1);
@@ -113,18 +122,17 @@ export async function upsertCnbFxSnapshot(
       if (existingObs.length === 0) {
         await tx.insert(macroObservations).values({
           indicatorId: indicator.id,
-          period,
-          observedAt: period,
+          period: obs.period,
+          observedAt: obs.observedAt,
           value: valueStr,
-          raw: obs as unknown as object,
+          raw: (obs.raw ?? obs) as object,
           fetchedAt,
         });
         observationsInserted++;
       } else {
         const prior = existingObs[0]!;
-        // Numeric comparison via parsed floats — Postgres NUMERIC may
-        // round-trip as "24.3550" vs our "24.355", so string-equality
-        // would over-report changes.
+        // Numeric compare via Number() — NUMERIC round-trips as e.g.
+        // "24.3550" vs our "24.355", so string equality over-reports.
         if (Number(prior.value) === Number(valueStr)) {
           observationsUnchanged++;
         } else {
@@ -132,7 +140,7 @@ export async function upsertCnbFxSnapshot(
             .update(macroObservations)
             .set({
               value: valueStr,
-              raw: obs as unknown as object,
+              raw: (obs.raw ?? obs) as object,
               fetchedAt,
             })
             .where(eq(macroObservations.id, prior.id));
@@ -140,29 +148,85 @@ export async function upsertCnbFxSnapshot(
         }
       }
 
-      // Refresh denormalized latest-* cache when this observation is
-      // newer than the indicator's last seen period. Lexicographic
-      // compare on ISO dates is chronological.
-      const priorLatest = indicator.latestObservedAt;
-      if (!priorLatest || period > priorLatest) {
-        await tx
-          .update(macroIndicators)
-          .set({
-            latestValue: valueStr,
-            latestPeriod: period,
-            latestObservedAt: period,
-            fetchedAt,
-            updatedAt: fetchedAt,
-          })
-          .where(eq(macroIndicators.id, indicator.id));
+      // Track the newest period seen in *this batch*. We push to the
+      // indicator row once at the end, not once per observation —
+      // saves N-1 UPDATE roundtrips on a backfill batch.
+      if (!latestObservedAt || obs.observedAt > latestObservedAt) {
+        latestObservedAt = obs.observedAt;
+        latestValue = valueStr;
+        latestPeriod = obs.period;
       }
     }
 
+    if (latestObservedAt !== indicator.latestObservedAt) {
+      await tx
+        .update(macroIndicators)
+        .set({
+          latestValue,
+          latestPeriod,
+          latestObservedAt,
+          fetchedAt,
+          updatedAt: fetchedAt,
+        })
+        .where(eq(macroIndicators.id, indicator.id));
+    }
+
     return {
-      indicatorsCreated,
+      indicatorsCreated: created ? 1 : 0,
       observationsInserted,
       observationsUpdated,
       observationsUnchanged,
     };
   });
+}
+
+/**
+ * Thin wrapper that decomposes a ČNB FX snapshot into per-currency
+ * (indicator, observations) batches and runs them through the generic
+ * helper. Each FX rate becomes its own `cz.fx.<code>_czk` indicator.
+ */
+export async function upsertCnbFxSnapshot(
+  db: Database,
+  snapshot: CnbFxSnapshot,
+): Promise<UpsertMacroResult> {
+  const fetchedAt = new Date(snapshot.fetchedAt);
+  const totals: UpsertMacroResult = {
+    indicatorsCreated: 0,
+    observationsInserted: 0,
+    observationsUpdated: 0,
+    observationsUnchanged: 0,
+  };
+
+  for (const obs of snapshot.observations) {
+    const code = obs.code.toUpperCase();
+    const partial = await upsertMacroObservations(
+      db,
+      {
+        indicatorKey: `cz.fx.${code.toLowerCase()}_czk`,
+        sourceKey: snapshot.sourceKey,
+        nameCs: `Kurz ${code}/CZK`,
+        nameEn: `${code}/CZK exchange rate`,
+        // The connector already normalized amount=100 currencies to
+        // per-single-foreign-unit, so the stored value means "CZK per
+        // one foreign unit" uniformly.
+        unit: 'CZK',
+        periodKind: 'daily',
+      },
+      [
+        {
+          period: obs.observedAt,
+          observedAt: obs.observedAt,
+          value: obs.rate,
+          raw: obs,
+        },
+      ],
+      { fetchedAt },
+    );
+    totals.indicatorsCreated += partial.indicatorsCreated;
+    totals.observationsInserted += partial.observationsInserted;
+    totals.observationsUpdated += partial.observationsUpdated;
+    totals.observationsUnchanged += partial.observationsUnchanged;
+  }
+
+  return totals;
 }

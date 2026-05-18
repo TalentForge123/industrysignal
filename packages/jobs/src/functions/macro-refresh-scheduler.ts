@@ -10,8 +10,15 @@
 // holidays ČNB returns the previous business day's fixing; the
 // content-hash-gated upsert turns that into a cheap no-op.
 
-import { fetchCnbDailyFx } from '@industrysignal/connectors-cz';
-import { upsertCnbFxSnapshot } from '@industrysignal/db';
+import {
+  CSU_INDICATORS,
+  fetchCnbDailyFx,
+  fetchCsuIndicator,
+} from '@industrysignal/connectors-cz';
+import {
+  upsertCnbFxSnapshot,
+  upsertMacroObservations,
+} from '@industrysignal/db';
 import { inngest } from '../client';
 import type { JobContext } from '../factory';
 
@@ -40,12 +47,45 @@ export function macroRefreshScheduler({ db }: JobContext) {
         };
       });
 
-      // Future-proofing: when ČSÚ (CPI, industrial production, GDP) and
-      // Eurostat (EU PMI, industrial production) connectors land, add
-      // additional `step.run` blocks here. Each step is independently
-      // retry-safe so a flaky upstream doesn't roll back the others.
+      // ----- ČSÚ ---------------------------------------------------------
+      // Iterate over every registered ČSÚ indicator. Each gets its own
+      // step.run so a 5xx on one dataset doesn't roll back the others.
+      // CSU_INDICATORS is a typed constant; the for-loop over it stays
+      // out of the LLM/data-config rabbit hole and keeps the Inngest
+      // function shape predictable in the dashboard.
+      const csuResults: Record<string, unknown> = {};
+      for (const spec of CSU_INDICATORS) {
+        // Step IDs must be unique within a function run.
+        const stepId = `csu:${spec.indicatorKey}`;
+        csuResults[spec.indicatorKey] = await step.run(stepId, async () => {
+          const snapshot = await fetchCsuIndicator(spec);
+          if (!snapshot) {
+            return { skipped: 'no-data' as const };
+          }
+          const persisted = await upsertMacroObservations(
+            db,
+            {
+              indicatorKey: spec.indicatorKey,
+              sourceKey: snapshot.sourceKey,
+              nameCs: spec.nameCs,
+              nameEn: spec.nameEn,
+              unit: spec.unit,
+              periodKind: spec.periodKind,
+            },
+            snapshot.observations,
+            { fetchedAt: new Date(snapshot.fetchedAt) },
+          );
+          return {
+            observationCount: snapshot.observations.length,
+            ...persisted,
+          };
+        });
+      }
 
-      return { cnb: cnbResult };
+      // Future-proofing: when Eurostat (EU PMI, industrial production,
+      // Comext trade flows) connectors land, append another loop here.
+
+      return { cnb: cnbResult, csu: csuResults };
     },
   );
 }

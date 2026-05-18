@@ -31,7 +31,10 @@ export {
 } from './queries/justice';
 export {
   upsertCnbFxSnapshot,
+  upsertMacroObservations,
+  type IndicatorMeta,
   type MacroIndicatorRow,
+  type MacroObservationInput,
   type MacroObservationRow,
   type UpsertMacroResult,
 } from './queries/macro';
