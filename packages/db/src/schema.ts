@@ -466,6 +466,150 @@ export const insolvencyEvents = pgTable(
 );
 
 // ============================================================
+// OFFICERS — statutory bodies + supervisory board + procurators.
+// ============================================================
+//
+// Sourced from Justice.cz / or.justice.cz (HANDOFF §3.2). Each row is
+// one (company × person × role) tuple. Past officers stay in the table
+// with `terminated_at` set — that's what powers executive-change
+// alerts (§7, §16) and the §15.9 entity-resolver officer-overlap
+// feature for cross-country sister companies.
+//
+// `name` is intentionally a single text column, not split into first /
+// last — Czech registry data uses many name formats (degrees, double
+// surnames, transliterations), and downstream consumers want the raw
+// form for fuzzy matching. We index it for the resolver's GIN trigram
+// queries; the index itself is added in the migration, not declared in
+// drizzle (which has no built-in pg_trgm helper).
+
+export const companyOfficerRoleEnum = [
+  'executive',
+  'director',
+  'supervisor',
+  'procurator',
+  'other',
+] as const;
+export type CompanyOfficerRole = (typeof companyOfficerRoleEnum)[number];
+
+export const companyOfficers = pgTable(
+  'company_officer',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    companyId: text('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    countryIso: text('country_iso').notNull().default('CZ'),
+    sourceKey: text('source_key').notNull(), // 'justice'
+
+    name: text('name').notNull(),
+    // Coarse role bucket — branchable across countries. Verbatim Czech
+    // label (e.g. "Předseda představenstva") stays in `roleLabel` for
+    // UI display and re-classification.
+    role: text('role', { enum: companyOfficerRoleEnum }).notNull(),
+    roleLabel: text('role_label').notNull(),
+
+    appointedAt: date('appointed_at'),
+    // Null = currently active. The diff worker (Week 3) emits
+    // `executive_change` alerts on either appointment or termination.
+    terminatedAt: date('terminated_at'),
+
+    raw: jsonb('raw'),
+    contentHash: text('content_hash').notNull(),
+
+    fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (t) => ({
+    // Natural identity inside one company snapshot — (role, name,
+    // appointedAt) catches the case where the same person served two
+    // separate terms with different appointment dates.
+    naturalUnique: uniqueIndex('company_officer_natural_unique').on(
+      t.companyId,
+      t.role,
+      t.name,
+      t.appointedAt,
+    ),
+    companyIdx: index('company_officer_company_idx').on(t.companyId),
+    nameIdx: index('company_officer_name_idx').on(t.name),
+  }),
+);
+
+// ============================================================
+// FILINGS — Sbírka listin index from Justice.cz.
+// ============================================================
+//
+// One row per filing exposed by or.justice.cz (HANDOFF §3.2). We store
+// the *reference* — type label, fiscal year, filed date, PDF URL —
+// not the document body. PDF parsing for financial figures lands when
+// SRSC `fin` dimension wires up (§22); this table is the catalog the
+// PDF worker reads from.
+//
+// `upstream_doc_id` is the dedup key: justice.cz keeps doc IDs stable
+// across re-fetches, and we compose them as `<subjektId>-<docId>` to
+// stay unique across the rare cases where a docId is reused.
+
+export const companyFilingTypeEnum = [
+  'annual_report',
+  'financial_statement',
+  'auditor_report',
+  'other',
+] as const;
+export type CompanyFilingType = (typeof companyFilingTypeEnum)[number];
+
+export const companyFilings = pgTable(
+  'company_filing',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    companyId: text('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    countryIso: text('country_iso').notNull().default('CZ'),
+    sourceKey: text('source_key').notNull(), // 'justice'
+
+    upstreamDocId: text('upstream_doc_id').notNull(),
+
+    documentType: text('document_type', { enum: companyFilingTypeEnum })
+      .notNull()
+      .default('other'),
+    documentTypeLabel: text('document_type_label').notNull(),
+
+    fiscalYear: integer('fiscal_year'),
+    filedAt: date('filed_at'),
+
+    documentUrl: text('document_url').notNull(),
+
+    raw: jsonb('raw'),
+    contentHash: text('content_hash').notNull(),
+
+    fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (t) => ({
+    upstreamUnique: uniqueIndex('company_filing_upstream_unique').on(
+      t.countryIso,
+      t.sourceKey,
+      t.upstreamDocId,
+    ),
+    companyFiscalIdx: index('company_filing_company_fiscal_idx').on(
+      t.companyId,
+      t.fiscalYear,
+    ),
+  }),
+);
+
+// ============================================================
 // RELATIONS — Drizzle query-builder JOIN support.
 // ============================================================
 
@@ -524,11 +668,27 @@ export const alertsRelations = relations(alerts, ({ one }) => ({
 
 export const companiesRelations = relations(companies, ({ many }) => ({
   snapshots: many(companySnapshots),
+  officers: many(companyOfficers),
+  filings: many(companyFilings),
 }));
 
 export const companySnapshotsRelations = relations(companySnapshots, ({ one }) => ({
   company: one(companies, {
     fields: [companySnapshots.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const companyOfficersRelations = relations(companyOfficers, ({ one }) => ({
+  company: one(companies, {
+    fields: [companyOfficers.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const companyFilingsRelations = relations(companyFilings, ({ one }) => ({
+  company: one(companies, {
+    fields: [companyFilings.companyId],
     references: [companies.id],
   }),
 }));

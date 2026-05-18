@@ -13,8 +13,17 @@
 // connector abstraction means the *event handler* doesn't need to know
 // which registries exist for which country — it asks the connector.
 
-import { fetchAresByIco, fetchIsirByIco } from '@industrysignal/connectors-cz';
-import { upsertCompanyFromAres, upsertInsolvencyEvents } from '@industrysignal/db';
+import {
+  fetchAresByIco,
+  fetchIsirByIco,
+  fetchJusticeByIco,
+} from '@industrysignal/connectors-cz';
+import {
+  findCompanyByRegistryId,
+  upsertCompanyFromAres,
+  upsertInsolvencyEvents,
+  upsertJusticeSnapshot,
+} from '@industrysignal/db';
 import { NonRetriableError } from 'inngest';
 import { inngest } from '../client';
 import type { JobContext } from '../factory';
@@ -66,6 +75,39 @@ export function companyRefresh({ db }: JobContext) {
         };
       });
 
+      // ----- Justice (officers + filings) --------------------------------
+      // Only runs when ARES found a company — we need a `company.id` to
+      // FK the officer / filing rows. Justice has no IČO → companyId of
+      // its own; we resolve via findCompanyByRegistryId.
+      const justiceResult = await step.run('fetch-and-persist-justice', async () => {
+        if (!aresResult.found) {
+          return { skipped: 'no-company-row' as const };
+        }
+        const snapshot = await fetchJusticeByIco(registryId);
+        if (!snapshot) {
+          return { skipped: 'not-in-justice' as const };
+        }
+        const cleanIco = registryId.replace(/\D/g, '').padStart(8, '0');
+        const company = await findCompanyByRegistryId(db, countryIso, cleanIco);
+        if (!company) {
+          // Shouldn't happen — ARES step just upserted it — but guard
+          // defensively so a race during company-id rewrite (very rare)
+          // surfaces as a skip, not a crash.
+          return { skipped: 'company-vanished' as const };
+        }
+        const persisted = await upsertJusticeSnapshot(db, {
+          companyId: company.id,
+          snapshot,
+        });
+        return {
+          subjektId: snapshot.subjektId,
+          officersInserted: persisted.officersInserted,
+          officersUpdated: persisted.officersUpdated,
+          filingsInserted: persisted.filingsInserted,
+          filingsUpdated: persisted.filingsUpdated,
+        };
+      });
+
       // ----- ISIR ---------------------------------------------------------
       const isirResult = await step.run('fetch-and-persist-isir', async () => {
         const result = await fetchIsirByIco(registryId);
@@ -95,6 +137,7 @@ export function companyRefresh({ db }: JobContext) {
 
       return {
         ares: aresResult,
+        justice: justiceResult,
         isir: isirResult,
       };
     },

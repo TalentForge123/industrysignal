@@ -19,10 +19,12 @@
   },
   "devDependencies": {
     "@types/node": "^20.17.6",
+    "domhandler": "^5.0.3",
     "typescript": "^5.6.3",
     "vitest": "^2.1.5"
   },
   "dependencies": {
+    "cheerio": "^1.0.0",
     "fast-xml-parser": "^5.8.0"
   }
 }

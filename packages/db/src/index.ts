@@ -11,6 +11,7 @@
 export * as schema from './schema';
 export { createDb, type Database, type CreateDbOptions } from './client';
 export {
+  findCompanyByRegistryId,
   upsertCompanyFromAres,
   type CompanyRow,
   type UpsertResult,
@@ -21,3 +22,10 @@ export {
   type UpsertEventResult,
   type UpsertInsolvencyResult,
 } from './queries/insolvency';
+export {
+  upsertJusticeSnapshot,
+  type CompanyOfficerRow,
+  type CompanyFilingRow,
+  type UpsertJusticeArgs,
+  type UpsertJusticeResult,
+} from './queries/justice';

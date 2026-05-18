@@ -6,4 +6,5 @@
 
 export * from './ares';
 export * from './isir';
+export * from './justice';
 export { contentHash } from './shared/hash';

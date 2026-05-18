@@ -21,6 +21,28 @@ import { companies, companySnapshots } from '../schema';
 
 export type CompanyRow = typeof companies.$inferSelect;
 
+/**
+ * Look up a company by its (country, registry id) natural key.
+ *
+ * Used by every downstream connector (Justice, future DE Handelsregister,
+ * ...) to resolve the synthetic `company.id` from the IČO/HRB/KRS the
+ * caller actually has. Returns null when the row is absent — the caller
+ * decides whether that's an error or a "fetch the base record first"
+ * signal.
+ */
+export async function findCompanyByRegistryId(
+  db: Database,
+  countryIso: string,
+  registryId: string,
+): Promise<CompanyRow | null> {
+  const rows = await db
+    .select()
+    .from(companies)
+    .where(and(eq(companies.countryIso, countryIso), eq(companies.registryId, registryId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export interface UpsertResult {
   company: CompanyRow;
   /** True if the snapshot represented a material change (or first sight). */
