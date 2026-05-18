@@ -15,6 +15,7 @@
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",
     "clean:next": "rm -rf apps/portal/.next apps/portal/.turbo apps/studio/.next apps/studio/.turbo",
+    "clean:cache": "rm -rf .turbo apps/*/.next apps/*/.turbo apps/*/tsconfig.tsbuildinfo packages/*/.turbo packages/*/tsconfig.tsbuildinfo packages/*/dist",
     "inngest:dev": "npx --yes inngest-cli@latest dev -u http://localhost:3000/api/inngest"
   },
   "devDependencies": {

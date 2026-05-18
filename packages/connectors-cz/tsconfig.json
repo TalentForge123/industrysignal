@@ -1,9 +1,14 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist",
+    // Source-only package — Next.js (turbopack/webpack) and tsx transpile
+    // on the fly from `main: ./src/index.ts`. `noEmit: true` guards
+    // against an accidental `tsc` run leaving a stale `dist/` that
+    // bundlers prefer over the live TypeScript source. Bumping the
+    // exports here without an explicit build step then surfaces as a
+    // confusing MODULE_NOT_FOUND in the consumer.
+    "noEmit": true,
     "rootDir": ".",
-    "declaration": true,
     "types": ["node"]
   },
   "include": ["src/**/*", "test/**/*"]
