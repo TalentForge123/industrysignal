@@ -1,0 +1,27 @@
+{
+  "name": "@industrysignal/jobs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Inngest background jobs — daily refresh scheduler + per-company on-demand refresh. Function definitions are db-agnostic (factory pattern, see src/factory.ts) so both apps/portal and apps/workers can register them.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src/**"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@industrysignal/connectors-cz": "workspace:*",
+    "@industrysignal/db": "workspace:*",
+    "drizzle-orm": "^0.38.4",
+    "inngest": "^3.27.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "typescript": "^5.6.3"
+  }
+}
