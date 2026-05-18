@@ -6,12 +6,13 @@
 // columns are kept for visual fidelity with the prototype's terminal
 // feel — they become real once SRSC dimensions wire up in Sprint 5+.
 
-import { useMemo, useState, useTransition, type CSSProperties } from 'react';
+import { useCallback, useMemo, useRef, useState, useTransition, type CSSProperties } from 'react';
 import { t } from '@industrysignal/i18n';
 import { useLang } from '@industrysignal/i18n/client';
-import type { WatchlistEntryView } from '@/lib/watchlist';
+import type { WatchlistEntryDetail, WatchlistEntryView } from '@/lib/watchlist';
 import {
   addWatchlistEntryAction,
+  getWatchlistEntryDetailAction,
   removeWatchlistEntryAction,
 } from '../watchlist/actions';
 
@@ -44,12 +45,21 @@ interface DisplayRow {
   last: string;
 }
 
+interface DetailState {
+  // Per-entry: undefined = not opened, 'loading' = fetch in flight,
+  // WatchlistEntryDetail = loaded, 'error' = failed (will retry on next open).
+  [entryId: string]: 'loading' | 'error' | WatchlistEntryDetail | undefined;
+}
+
 export function WatchListView({ entries }: WatchListViewProps) {
   const [lang] = useLang();
   const [filter, setFilter] = useState<string>(ALL_KEY);
   const [formOpen, setFormOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [details, setDetails] = useState<DetailState>({});
+  const formRef = useRef<HTMLFormElement>(null);
 
   const rows = useMemo(() => entries.map((e) => buildDisplayRow(e, lang)), [entries, lang]);
 
@@ -73,6 +83,9 @@ export function WatchListView({ entries }: WatchListViewProps) {
     startTransition(async () => {
       const result = await addWatchlistEntryAction(formData);
       if (result.ok) {
+        // Clear inputs so a follow-up add starts fresh — revalidatePath
+        // on the server side has already refreshed the table.
+        formRef.current?.reset();
         setFormOpen(false);
       } else {
         setFormError(translateErr(result.error, lang));
@@ -85,9 +98,48 @@ export function WatchListView({ entries }: WatchListViewProps) {
       const result = await removeWatchlistEntryAction(entryId);
       if (!result.ok) {
         setFormError(translateErr(result.error, lang));
+      } else {
+        // Drop any cached detail for the removed row.
+        setExpanded((prev) => {
+          const next = new Set(prev);
+          next.delete(entryId);
+          return next;
+        });
+        setDetails((prev) => {
+          const next = { ...prev };
+          delete next[entryId];
+          return next;
+        });
       }
     });
   }
+
+  const onToggleExpand = useCallback(
+    (entryId: string) => {
+      setExpanded((prev) => {
+        const next = new Set(prev);
+        if (next.has(entryId)) {
+          next.delete(entryId);
+          return next;
+        }
+        next.add(entryId);
+        return next;
+      });
+      // Lazy-load detail on first expand; reuse cached payload on
+      // subsequent re-opens of the same row.
+      const cached = details[entryId];
+      if (cached && cached !== 'error') return;
+      setDetails((prev) => ({ ...prev, [entryId]: 'loading' }));
+      startTransition(async () => {
+        const result = await getWatchlistEntryDetailAction(entryId);
+        setDetails((prev) => ({
+          ...prev,
+          [entryId]: result.ok && result.detail ? result.detail : 'error',
+        }));
+      });
+    },
+    [details],
+  );
 
   return (
     <div style={{ padding: 0, fontFamily: 'var(--font-mono)' }}>
@@ -166,6 +218,7 @@ export function WatchListView({ entries }: WatchListViewProps) {
 
       {formOpen && (
         <form
+          ref={formRef}
           action={onSubmitAdd}
           style={{
             display: 'flex',
@@ -281,69 +334,342 @@ export function WatchListView({ entries }: WatchListViewProps) {
             </tr>
           </thead>
           <tbody>
-            {visible.map((r) => (
-              <tr key={r.id}>
-                <td>
-                  <span className="key">{r.ticker}</span>
-                </td>
-                <td style={{ color: 'var(--fg-primary)' }}>{r.name}</td>
-                <td style={{ color: 'var(--fg-tertiary)' }}>{r.segment}</td>
-                <td className="num" style={{ color: 'var(--fg-primary)', fontWeight: 600 }}>
-                  {r.price}
-                </td>
-                <td className={'num ' + (r.dir === 'up' ? 'up' : 'dn')}>{r.delta}</td>
-                <td className="num" style={{ color: 'var(--fg-tertiary)' }}>{r.bid}</td>
-                <td className="num" style={{ color: 'var(--fg-tertiary)' }}>{r.ask}</td>
-                <td className="num" style={{ color: 'var(--fg-tertiary)' }}>{r.vol}</td>
-                <td className="num up">{r.high}</td>
-                <td className="num dn">{r.low}</td>
-                <td className="num" style={{ color: 'var(--fg-tertiary)' }}>{r.mcap}</td>
-                <td>
-                  <span
-                    style={{
-                      padding: '0 6px',
-                      fontSize: 10,
-                      letterSpacing: '0.06em',
-                      color:
-                        r.status === 'up'
-                          ? 'var(--signal-up)'
+            {visible.flatMap((r) => {
+              const isOpen = expanded.has(r.id);
+              const detail = details[r.id];
+              return [
+                <tr
+                  key={r.id}
+                  onClick={() => onToggleExpand(r.id)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <td>
+                    <span className="key">{r.ticker}</span>
+                  </td>
+                  <td style={{ color: 'var(--fg-primary)' }}>
+                    <span
+                      style={{
+                        marginRight: 6,
+                        color: 'var(--fg-muted)',
+                        fontSize: 9,
+                        display: 'inline-block',
+                        width: 8,
+                      }}
+                    >
+                      {isOpen ? '▾' : '▸'}
+                    </span>
+                    {r.name}
+                  </td>
+                  <td style={{ color: 'var(--fg-tertiary)' }}>{r.segment}</td>
+                  <td className="num" style={{ color: 'var(--fg-primary)', fontWeight: 600 }}>
+                    {r.price}
+                  </td>
+                  <td className={'num ' + (r.dir === 'up' ? 'up' : 'dn')}>{r.delta}</td>
+                  <td className="num" style={{ color: 'var(--fg-tertiary)' }}>{r.bid}</td>
+                  <td className="num" style={{ color: 'var(--fg-tertiary)' }}>{r.ask}</td>
+                  <td className="num" style={{ color: 'var(--fg-tertiary)' }}>{r.vol}</td>
+                  <td className="num up">{r.high}</td>
+                  <td className="num dn">{r.low}</td>
+                  <td className="num" style={{ color: 'var(--fg-tertiary)' }}>{r.mcap}</td>
+                  <td>
+                    <span
+                      style={{
+                        padding: '0 6px',
+                        fontSize: 10,
+                        letterSpacing: '0.06em',
+                        color:
+                          r.status === 'up'
+                            ? 'var(--signal-up)'
+                            : r.status === 'dn'
+                              ? 'var(--signal-down)'
+                              : 'var(--signal-warn)',
+                        border: '1px solid currentColor',
+                      }}
+                    >
+                      {r.hasCompanyData
+                        ? r.status === 'up'
+                          ? t(lang, 'stat_ok')
                           : r.status === 'dn'
-                            ? 'var(--signal-down)'
-                            : 'var(--signal-warn)',
-                      border: '1px solid currentColor',
-                    }}
-                  >
-                    {r.hasCompanyData
-                      ? r.status === 'up'
-                        ? t(lang, 'stat_ok')
-                        : r.status === 'dn'
-                          ? t(lang, 'stat_neg')
-                          : t(lang, 'stat_warn')
-                      : '…'}
-                  </span>
-                </td>
-                <td style={{ color: 'var(--fg-muted)' }}>
-                  {r.hasCompanyData ? r.last : t(lang, 'watch_just_added')}
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    onClick={() => onRemove(r.id)}
-                    disabled={isPending}
-                    aria-label={t(lang, 'watch_remove')}
-                    title={t(lang, 'watch_remove')}
-                    style={removeButtonStyle()}
-                  >
-                    ×
-                  </button>
-                </td>
-              </tr>
-            ))}
+                            ? t(lang, 'stat_neg')
+                            : t(lang, 'stat_warn')
+                        : '…'}
+                    </span>
+                  </td>
+                  <td style={{ color: 'var(--fg-muted)' }}>
+                    {r.hasCompanyData ? r.last : t(lang, 'watch_just_added')}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemove(r.id);
+                      }}
+                      disabled={isPending}
+                      aria-label={t(lang, 'watch_remove')}
+                      title={t(lang, 'watch_remove')}
+                      style={removeButtonStyle()}
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>,
+                isOpen ? (
+                  <tr key={r.id + ':detail'}>
+                    <td colSpan={14} style={{ padding: 0, background: 'var(--graphite-1000)' }}>
+                      <DetailPanel state={detail} lang={lang} />
+                    </td>
+                  </tr>
+                ) : null,
+              ];
+            })}
           </tbody>
         </table>
       )}
     </div>
   );
+}
+
+// ----- Detail panel ------------------------------------------------------
+
+function DetailPanel({
+  state,
+  lang,
+}: {
+  state: 'loading' | 'error' | WatchlistEntryDetail | undefined;
+  lang: 'cs' | 'en';
+}) {
+  if (state === undefined || state === 'loading') {
+    return (
+      <div style={detailPanelStyle()}>
+        <span style={{ color: 'var(--fg-muted)', fontSize: 11 }}>
+          {t(lang, 'watch_detail_loading')}
+        </span>
+      </div>
+    );
+  }
+  if (state === 'error') {
+    return (
+      <div style={detailPanelStyle()}>
+        <span style={{ color: 'var(--signal-down)', fontSize: 11 }}>
+          {t(lang, 'watch_err_internal')}
+        </span>
+      </div>
+    );
+  }
+
+  const { company, officers, insolvency, filings } = state;
+  if (!company) {
+    return (
+      <div style={detailPanelStyle()}>
+        <span style={{ color: 'var(--fg-muted)', fontSize: 11 }}>
+          {t(lang, 'watch_detail_no_company')}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        ...detailPanelStyle(),
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1fr',
+        gap: 24,
+      }}
+    >
+      {/* Column 1: Company facts */}
+      <div>
+        <DetailHeader>{company.legalName}</DetailHeader>
+        {!company.isActive && (
+          <span style={{ color: 'var(--signal-down)', fontSize: 10 }}>
+            ● {t(lang, 'watch_detail_inactive')}
+          </span>
+        )}
+        <DetailRow label={t(lang, 'watch_detail_address')}>
+          {company.addressLine ?? '—'}
+        </DetailRow>
+        <DetailRow label={t(lang, 'watch_detail_nace')}>
+          {company.primaryNace ?? '—'}
+        </DetailRow>
+        <DetailRow label={t(lang, 'watch_detail_legal_form')}>
+          {company.legalFormCode ?? '—'}
+        </DetailRow>
+      </div>
+
+      {/* Column 2: Officers */}
+      <div>
+        <DetailHeader>{t(lang, 'watch_detail_officers')}</DetailHeader>
+        {officers.length === 0 ? (
+          <span style={{ color: 'var(--fg-muted)', fontSize: 11 }}>
+            {t(lang, 'watch_detail_no_officers')}
+          </span>
+        ) : (
+          <ul style={detailListStyle()}>
+            {officers.slice(0, 8).map((o) => (
+              <li key={o.id} style={detailListItemStyle()}>
+                <span style={{ color: 'var(--fg-primary)' }}>{o.name}</span>
+                <span
+                  style={{
+                    color: 'var(--fg-tertiary)',
+                    fontSize: 10,
+                    marginLeft: 6,
+                  }}
+                >
+                  · {o.roleLabel}
+                  {o.appointedAt ? ` · ${o.appointedAt}` : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Column 3: Insolvency + Filings */}
+      <div>
+        <DetailHeader>{t(lang, 'watch_detail_insolvency')}</DetailHeader>
+        {insolvency.length === 0 ? (
+          <span style={{ color: 'var(--signal-up)', fontSize: 11 }}>
+            {t(lang, 'watch_detail_no_insolvency')}
+          </span>
+        ) : (
+          <ul style={detailListStyle()}>
+            {insolvency.map((i) => (
+              <li key={i.id} style={detailListItemStyle()}>
+                {i.caseDetailUrl ? (
+                  <a
+                    href={i.caseDetailUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: 'var(--signal-down)' }}
+                  >
+                    {i.caseRef}
+                  </a>
+                ) : (
+                  <span style={{ color: 'var(--signal-down)' }}>{i.caseRef}</span>
+                )}
+                {i.caseStatus && (
+                  <span
+                    style={{
+                      color: 'var(--fg-tertiary)',
+                      fontSize: 10,
+                      marginLeft: 6,
+                    }}
+                  >
+                    · {i.caseStatus}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        <DetailHeader style={{ marginTop: 12 }}>{t(lang, 'watch_detail_filings')}</DetailHeader>
+        {filings.length === 0 ? (
+          <span style={{ color: 'var(--fg-muted)', fontSize: 11 }}>
+            {t(lang, 'watch_detail_no_filings')}
+          </span>
+        ) : (
+          <ul style={detailListStyle()}>
+            {filings.map((f) => (
+              <li key={f.id} style={detailListItemStyle()}>
+                <a
+                  href={f.documentUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: 'var(--amber-300)' }}
+                >
+                  {f.documentTypeLabel}
+                </a>
+                {f.filedAt && (
+                  <span
+                    style={{
+                      color: 'var(--fg-muted)',
+                      fontSize: 10,
+                      marginLeft: 6,
+                    }}
+                  >
+                    · {f.filedAt}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DetailHeader({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: CSSProperties;
+}) {
+  return (
+    <div
+      style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10,
+        letterSpacing: '0.14em',
+        textTransform: 'uppercase',
+        color: 'var(--amber-300)',
+        fontWeight: 600,
+        marginBottom: 8,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 4, fontSize: 11 }}>
+      <span
+        style={{
+          fontFamily: 'var(--font-mono)',
+          color: 'var(--fg-muted)',
+          minWidth: 60,
+          fontSize: 10,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+        }}
+      >
+        {label}
+      </span>
+      <span style={{ color: 'var(--fg-secondary)' }}>{children}</span>
+    </div>
+  );
+}
+
+function detailPanelStyle(): CSSProperties {
+  return {
+    padding: '14px 24px',
+    borderTop: '1px solid var(--graphite-800)',
+    borderBottom: '1px solid var(--graphite-800)',
+    fontFamily: 'var(--font-sans)',
+    fontSize: 12,
+    lineHeight: 1.5,
+  };
+}
+
+function detailListStyle(): CSSProperties {
+  return {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0,
+  };
+}
+
+function detailListItemStyle(): CSSProperties {
+  return {
+    padding: '2px 0',
+    fontSize: 11,
+    lineHeight: 1.4,
+  };
 }
 
 // ----- Display-row synthesis -------------------------------------------

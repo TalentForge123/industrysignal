@@ -20,6 +20,10 @@ import { and, eq } from 'drizzle-orm';
 import { auth } from '../../../auth';
 import { db } from '../../../lib/db';
 import { getOrCreateDefaultOrgForUser, requireOrgMembership } from '../../../lib/orgs';
+import {
+  getWatchlistEntryDetail,
+  type WatchlistEntryDetail,
+} from '../../../lib/watchlist';
 
 export interface AddWatchlistEntryResult {
   ok: boolean;
@@ -117,6 +121,51 @@ export async function addWatchlistEntryAction(
 export interface RemoveWatchlistEntryResult {
   ok: boolean;
   error?: 'unauthenticated' | 'not_found' | 'forbidden' | 'internal';
+}
+
+export interface GetEntryDetailResult {
+  ok: boolean;
+  detail?: WatchlistEntryDetail;
+  error?: 'unauthenticated' | 'not_found' | 'forbidden' | 'internal';
+}
+
+/**
+ * Lazy-load detail for one watchlist entry — officers + active
+ * insolvency + recent filings. Called from the client when the user
+ * expands a row. RBAC: caller must be a member of the entry's owning
+ * org.
+ */
+export async function getWatchlistEntryDetailAction(
+  entryId: string,
+): Promise<GetEntryDetailResult> {
+  const session = await auth();
+  const user = session?.user;
+  if (!user?.id) return { ok: false, error: 'unauthenticated' };
+
+  try {
+    // Resolve org through entry → watchlist; reject if caller isn't a member.
+    const rows = await db
+      .select({ organizationId: schema.watchlists.organizationId })
+      .from(schema.watchlistEntries)
+      .innerJoin(
+        schema.watchlists,
+        eq(schema.watchlists.id, schema.watchlistEntries.watchlistId),
+      )
+      .where(eq(schema.watchlistEntries.id, entryId))
+      .limit(1);
+    if (!rows[0]) return { ok: false, error: 'not_found' };
+
+    await requireOrgMembership(user.id, rows[0].organizationId);
+
+    const detail = await getWatchlistEntryDetail(entryId);
+    if (!detail) return { ok: false, error: 'not_found' };
+    return { ok: true, detail };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('requireOrgMembership')) return { ok: false, error: 'forbidden' };
+    process.stderr.write(`[getWatchlistEntryDetailAction] ${msg}\n`);
+    return { ok: false, error: 'internal' };
+  }
 }
 
 export async function removeWatchlistEntryAction(
