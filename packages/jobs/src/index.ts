@@ -7,3 +7,10 @@
 
 export { inngest, type IndustrySignalEvents } from './client';
 export { createFunctions, type JobContext } from './factory';
+export {
+  classifyInsolvencyAlert,
+  classifyOfficerAlert,
+  type InsolvencyAlertInput,
+  type OfficerAlertInput,
+  type OrgWatchPair,
+} from './alert-classifier';

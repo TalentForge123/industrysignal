@@ -43,6 +43,13 @@
       "when": 1779124222481,
       "tag": "0005_great_sugar_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779125647757,
+      "tag": "0006_keen_blazing_skull",
+      "breakpoints": true
     }
   ]
 }

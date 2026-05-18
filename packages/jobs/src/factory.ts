@@ -11,6 +11,7 @@
 //     it imports the same factory and registers a subset of functions.
 
 import type { Database } from '@industrysignal/db';
+import { alertDiffScheduler } from './functions/alert-diff-scheduler';
 import { companiesRefreshScheduler } from './functions/companies-refresh-scheduler';
 import { companyRefresh } from './functions/company-refresh';
 import { macroRefreshScheduler } from './functions/macro-refresh-scheduler';
@@ -24,5 +25,6 @@ export function createFunctions(ctx: JobContext) {
     companiesRefreshScheduler(ctx),
     companyRefresh(ctx),
     macroRefreshScheduler(ctx),
+    alertDiffScheduler(ctx),
   ] as const;
 }

@@ -38,3 +38,14 @@ export {
   type MacroObservationRow,
   type UpsertMacroResult,
 } from './queries/macro';
+export {
+  findOrgsWatchingCompany,
+  findRecentInsolvencyEvents,
+  findRecentOfficerChanges,
+  insertAlertIfNew,
+  type AlertInsert,
+  type AlertRow,
+  type InsolvencyChange,
+  type OfficerChange,
+  type WatchingOrg,
+} from './queries/alerts';

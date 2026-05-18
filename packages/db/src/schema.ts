@@ -181,28 +181,49 @@ export type AlertStatus = (typeof alertStatusEnum)[number];
 export const alertTargetTypeEnum = ['company', 'segment', 'region', 'macro'] as const;
 export type AlertTargetType = (typeof alertTargetTypeEnum)[number];
 
-export const alerts = pgTable('alert', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  organizationId: text('organization_id')
-    .notNull()
-    .references(() => organizations.id, { onDelete: 'cascade' }),
-  watchlistId: text('watchlist_id').references(() => watchlists.id, { onDelete: 'set null' }),
-  priority: text('priority', { enum: alertPriorityEnum }).notNull().default('normal'),
-  // Signal kind taxonomy lives in §16: insolvency_filed, executive_change,
-  // production_cut, capacity_expansion, contract_win, concentration_risk,
-  // negative_news_cluster, credit_downgrade, ma_announcement, sanctions_hit.
-  kind: text('kind').notNull(),
-  targetType: text('target_type', { enum: alertTargetTypeEnum }).notNull(),
-  targetRef: text('target_ref'),
-  countryIso: text('country_iso'),
-  title: text('title').notNull(),
-  message: text('message').notNull(),
-  sourceUrl: text('source_url'),
-  status: text('status', { enum: alertStatusEnum }).notNull().default('new'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const alerts = pgTable(
+  'alert',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    watchlistId: text('watchlist_id').references(() => watchlists.id, { onDelete: 'set null' }),
+    priority: text('priority', { enum: alertPriorityEnum }).notNull().default('normal'),
+    // Signal kind taxonomy lives in §16: insolvency_filed, executive_change,
+    // production_cut, capacity_expansion, contract_win, concentration_risk,
+    // negative_news_cluster, credit_downgrade, ma_announcement, sanctions_hit.
+    kind: text('kind').notNull(),
+    targetType: text('target_type', { enum: alertTargetTypeEnum }).notNull(),
+    targetRef: text('target_ref'),
+    countryIso: text('country_iso'),
+    title: text('title').notNull(),
+    message: text('message').notNull(),
+    sourceUrl: text('source_url'),
+    // Deduplication key — references the upstream row that produced this
+    // alert. For insolvency_filed: insolvency_event.id. For
+    // executive_change: company_officer.id. Combined with (org, kind)
+    // this prevents the alert-diff cron from emitting duplicates when
+    // its lookback window overlaps a previous run.
+    sourceEventId: text('source_event_id'),
+    status: text('status', { enum: alertStatusEnum }).notNull().default('new'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    // Idempotency anchor for the diff cron: re-running on a row we've
+    // already alerted on becomes a no-op via INSERT ... ON CONFLICT.
+    dedupUnique: uniqueIndex('alert_dedup_unique').on(
+      t.organizationId,
+      t.kind,
+      t.sourceEventId,
+    ),
+    // Fast path for "new alerts for this org" — what the feed view + the
+    // /portal home counter both hit.
+    orgStatusIdx: index('alert_org_status_idx').on(t.organizationId, t.status, t.createdAt),
+  }),
+);
 
 // ============================================================
 // REPORTS — quarterly editorial publications (§4, §17).
