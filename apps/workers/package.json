@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "echo 'workers — Sprint 2 CLI entrypoints under src/cli/. Inngest cron wiring lands later in Week 2.'",
     "ares:fetch": "tsx src/cli/ares-fetch.ts",
+    "cnb:fetch": "tsx src/cli/cnb-fetch.ts",
     "isir:fetch": "tsx src/cli/isir-fetch.ts",
     "justice:fetch": "tsx src/cli/justice-fetch.ts",
     "typecheck": "tsc --noEmit"

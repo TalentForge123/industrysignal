@@ -19,6 +19,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgTable,
   primaryKey,
   text,
@@ -610,6 +611,93 @@ export const companyFilings = pgTable(
 );
 
 // ============================================================
+// MACRO INDICATORS — registry + time-series observations.
+// ============================================================
+//
+// Per HANDOFF §3.1 the Report engine renders a KPI strip across the
+// top of each issue: GDP Q/Q, CPI, industrial production, EUR/CZK,
+// repo rate, ... — pulled from ČSÚ + ČNB ARAD + Eurostat + OECD.
+//
+// `macro_indicator` is the *registry* of what we track. One row per
+// (source, series). `macro_observation` is the time series — append-
+// mostly, one row per published period (daily for FX, monthly for CPI,
+// quarterly for GDP). Drizzle's `numeric` maps to Postgres NUMERIC,
+// which preserves the exact decimal from upstream (no float drift).
+//
+// `latest_value` / `latest_period` are *denormalized read paths* so the
+// portal sidebar doesn't have to do `ORDER BY observed_at DESC LIMIT 1`
+// on every page load — they're refreshed by the persistence helper.
+
+export const macroPeriodKindEnum = ['daily', 'monthly', 'quarterly', 'yearly'] as const;
+export type MacroPeriodKind = (typeof macroPeriodKindEnum)[number];
+
+export const macroIndicators = pgTable(
+  'macro_indicator',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    // Stable lookup key — drives Report-engine references. Convention:
+    // '<scope>.<category>.<series>' e.g. 'cz.fx.eur_czk',
+    // 'cz.macro.cpi_yoy', 'eu.eurostat.industrial_production_yoy'.
+    indicatorKey: text('indicator_key').notNull(),
+    sourceKey: text('source_key').notNull(), // 'cnb-arad' | 'csu' | 'eurostat' | ...
+
+    nameCs: text('name_cs').notNull(),
+    nameEn: text('name_en').notNull(),
+    unit: text('unit').notNull(), // '%' | 'CZK' | 'index' | 'CZK/EUR' | ...
+    periodKind: text('period_kind', { enum: macroPeriodKindEnum }).notNull(),
+
+    // Denormalized read cache — refreshed atomically when a new
+    // observation lands. Null until first fetch.
+    latestValue: numeric('latest_value'),
+    latestPeriod: text('latest_period'),
+    latestObservedAt: date('latest_observed_at'),
+
+    fetchedAt: timestamp('fetched_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (t) => ({
+    keyUnique: uniqueIndex('macro_indicator_key_unique').on(t.indicatorKey),
+  }),
+);
+
+export const macroObservations = pgTable(
+  'macro_observation',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    indicatorId: text('indicator_id')
+      .notNull()
+      .references(() => macroIndicators.id, { onDelete: 'cascade' }),
+    // Canonical period label — '2026-05-17' for daily, '2026-05' for
+    // monthly, '2026-Q1' for quarterly, '2026' for yearly. Lexicographic
+    // sort matches chronological order within a single periodKind.
+    period: text('period').notNull(),
+    // First day of the period — lets us range-query without parsing
+    // the `period` string in SQL.
+    observedAt: date('observed_at').notNull(),
+    value: numeric('value').notNull(),
+    raw: jsonb('raw'),
+    fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    indicatorPeriodUnique: uniqueIndex('macro_observation_indicator_period_unique').on(
+      t.indicatorId,
+      t.period,
+    ),
+    indicatorObservedIdx: index('macro_observation_indicator_observed_idx').on(
+      t.indicatorId,
+      t.observedAt,
+    ),
+  }),
+);
+
+// ============================================================
 // RELATIONS — Drizzle query-builder JOIN support.
 // ============================================================
 
@@ -690,5 +778,16 @@ export const companyFilingsRelations = relations(companyFilings, ({ one }) => ({
   company: one(companies, {
     fields: [companyFilings.companyId],
     references: [companies.id],
+  }),
+}));
+
+export const macroIndicatorsRelations = relations(macroIndicators, ({ many }) => ({
+  observations: many(macroObservations),
+}));
+
+export const macroObservationsRelations = relations(macroObservations, ({ one }) => ({
+  indicator: one(macroIndicators, {
+    fields: [macroObservations.indicatorId],
+    references: [macroIndicators.id],
   }),
 }));

@@ -13,11 +13,16 @@
 import type { Database } from '@industrysignal/db';
 import { companiesRefreshScheduler } from './functions/companies-refresh-scheduler';
 import { companyRefresh } from './functions/company-refresh';
+import { macroRefreshScheduler } from './functions/macro-refresh-scheduler';
 
 export interface JobContext {
   db: Database;
 }
 
 export function createFunctions(ctx: JobContext) {
-  return [companiesRefreshScheduler(ctx), companyRefresh(ctx)] as const;
+  return [
+    companiesRefreshScheduler(ctx),
+    companyRefresh(ctx),
+    macroRefreshScheduler(ctx),
+  ] as const;
 }

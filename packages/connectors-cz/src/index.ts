@@ -5,6 +5,7 @@
 // when they only need one symbol.
 
 export * from './ares';
+export * from './cnb';
 export * from './isir';
 export * from './justice';
 export { contentHash } from './shared/hash';

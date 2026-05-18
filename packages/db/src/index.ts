@@ -29,3 +29,9 @@ export {
   type UpsertJusticeArgs,
   type UpsertJusticeResult,
 } from './queries/justice';
+export {
+  upsertCnbFxSnapshot,
+  type MacroIndicatorRow,
+  type MacroObservationRow,
+  type UpsertMacroResult,
+} from './queries/macro';
