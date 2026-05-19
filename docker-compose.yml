@@ -1,0 +1,36 @@
+# Local development + E2E Postgres.
+#
+# Two intentional choices:
+#   - Port 5433 on the host (not the default 5432) — keeps Homebrew or
+#     Postgres.app installations on the dev box from clashing.
+#   - Named volume `industrysignal-pgdata` — survives `down`. Use
+#     `docker compose down -v` to wipe state for a clean reseed.
+#
+# Bring up:    docker compose up -d db
+# Migrate:     pnpm --filter @industrysignal/db db:migrate
+# Seed:        pnpm db:seed
+# Tear down:   docker compose down
+# Nuke:        docker compose down -v
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: industrysignal-db
+    environment:
+      POSTGRES_USER: industrysignal
+      POSTGRES_PASSWORD: industrysignal
+      POSTGRES_DB: industrysignal
+    ports:
+      - '5433:5432'
+    volumes:
+      - industrysignal-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # `pg_isready` returns 0 once Postgres accepts connections; the
+      # E2E runner blocks on this before applying migrations.
+      test: ['CMD-SHELL', 'pg_isready -U industrysignal -d industrysignal']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  industrysignal-pgdata:

@@ -40,3 +40,12 @@ pnpm-debug.log*
 # Coverage
 coverage/
 .nyc_output/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# E2E config — keep .env.test.example tracked
+.env.test
+!.env.test.example

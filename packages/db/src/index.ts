@@ -9,6 +9,7 @@
 // to keep the surface small.
 
 export * as schema from './schema';
+export { SEED_IDS } from './seed-ids';
 export { createDb, type Database, type CreateDbOptions } from './client';
 export {
   findCompanyByRegistryId,

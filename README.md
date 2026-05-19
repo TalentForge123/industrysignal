@@ -245,3 +245,26 @@ A custom industrial wordmark **"INDUSTRYSIGNAL"** set in IBM Plex Mono SemiBold,
 - **Real font files** if a custom industrial typeface is preferred — IBM Plex (Google Fonts) is the current substitution.
 - **Confirmation of icon library** — Lucide is the substitution; swap if the client has a preference.
 - **Real Q2 2026 editorial copy** — the 5-section report uses synthesized placeholder copy in the right Czech voice; happy to reflow when the real copy lands.
+
+---
+
+## Local development
+
+The portal app + jobs run against Postgres 16 in docker-compose. First-run:
+
+```bash
+pnpm install
+pnpm test:e2e:install         # one-off: pull Playwright browsers
+pnpm db:up                    # boot Postgres on localhost:5433
+pnpm db:migrate               # apply Drizzle migrations
+pnpm db:seed                  # load the E2E fixture (1 org, 5 alerts, 3 watch entries)
+pnpm dev                      # next dev on :3000
+
+# Run the end-to-end Playwright suite (orchestrates db:up → migrate → seed → tests):
+pnpm test:e2e
+
+# Wipe + reseed if the fixture drifted:
+pnpm db:reset
+```
+
+Sign in at `/dev-login` with `admin@test.local` (seeded) or any new address — a personal org is auto-provisioned on first sign-in.

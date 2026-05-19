@@ -15,8 +15,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { schema } from '@industrysignal/db';
-import { inngest } from '@industrysignal/jobs';
 import { and, eq } from 'drizzle-orm';
+import { inngest } from '../../../lib/inngest';
 import { auth } from '../../../auth';
 import { db } from '../../../lib/db';
 import { getOrCreateDefaultOrgForUser, requireOrgMembership } from '../../../lib/orgs';

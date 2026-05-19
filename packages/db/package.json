@@ -19,7 +19,8 @@
     "db:migrate": "tsx src/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:check": "drizzle-kit check"
+    "db:check": "drizzle-kit check",
+    "db:seed": "tsx src/seed.ts"
   },
   "dependencies": {
     "@industrysignal/connectors-cz": "workspace:*",
