@@ -7,19 +7,27 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { PortalShell } from './_shell/PortalShell';
 import { logoutAction } from './_shell/logout-action';
-import { ALERTS_FRESH_COUNT } from '@/lib/mock-data';
+import { countFreshAlertsForOrg } from '@/lib/alerts';
+import { getOrCreateDefaultOrgForUser } from '@/lib/orgs';
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const session = await auth();
-  if (!session?.user) {
+  const sessionUser = session?.user;
+  if (!sessionUser?.id) {
     redirect('/login');
   }
+  const ctx = await getOrCreateDefaultOrgForUser({
+    userId: sessionUser.id,
+    email: sessionUser.email ?? null,
+    displayName: sessionUser.name ?? null,
+  });
+  const alertsCount = await countFreshAlertsForOrg(ctx.organizationId);
   const user = {
-    name: session.user.name ?? session.user.email ?? 'User',
-    org: 'IndustrySignal',
+    name: sessionUser.name ?? sessionUser.email ?? 'User',
+    org: ctx.organizationName,
   };
   return (
-    <PortalShell user={user} alertsCount={ALERTS_FRESH_COUNT} logoutAction={logoutAction}>
+    <PortalShell user={user} alertsCount={alertsCount} logoutAction={logoutAction}>
       {children}
     </PortalShell>
   );

@@ -253,21 +253,9 @@ export interface WatchlistRow {
   last: string;
 }
 
-export interface AlertRow {
-  id: string;
-  tone: 'up' | 'dn' | 'warn';
-  kind: string;
-  target: string;
-  body: string;
-  time: string;
-  fresh: boolean;
-  ticker?: string;
-}
-
 interface PortalSlice {
   archive: ArchiveRow[];
   watchlist: WatchlistRow[];
-  alerts: AlertRow[];
 }
 
 const csSlice: PortalSlice = {
@@ -287,13 +275,6 @@ const csSlice: PortalSlice = {
     { ticker: 'UNIP', name: 'Unipetrol RPA', sub: 'CZ · Chemie', segment: 'Chemie', status: 'up', delta: '+0,6 %', dir: 'up', last: '11. 5.' },
     { ticker: 'CDCG', name: 'ČD Cargo', sub: 'CZ · Logistika', segment: 'Logistika', status: 'up', delta: '+2,1 %', dir: 'up', last: '10. 5.' },
     { ticker: 'TATR', name: 'Tatra Trucks', sub: 'CZ · OEM', segment: 'Automotive', status: 'warn', delta: '−1,4 %', dir: 'dn', last: '14. 5.' },
-  ],
-  alerts: [
-    { id: 'a1', tone: 'dn', kind: 'Alert', target: 'Vítkovice Steel', body: 'Cena válcovaného plechu propadla −5,8 % WoW. Indikace dopadu na 4 firmy ve vašem Watch Listu.', time: '14:32', fresh: true },
-    { id: 'a2', tone: 'warn', kind: 'Watch', target: 'VW Group', body: 'VW Group ohlásil snížení produkce v Mladé Boleslavi o −12 % pro H2 2026.', time: '12:08', fresh: true },
-    { id: 'a3', tone: 'up', kind: 'Pozitiv.', target: 'ČEZ a.s.', body: 'Tržby za Q2 nad konsensem o +1,2 p.b.', time: 'včera', fresh: false },
-    { id: 'a4', tone: 'warn', kind: 'Sledujeme', target: 'CSRD H2', body: 'Třetí vlna CSRD reportingu vstupuje v platnost 1. 7. Dotčeno 12 firem ve Watch Listu.', time: '13. 5.', fresh: false },
-    { id: 'a5', tone: 'dn', kind: 'Alert', target: 'Tatra Trucks', body: 'Q2 EBITDA −1,4 % Q/Q. Pod konsensem analytiků o 0,8 p.b.', time: '12. 5.', fresh: false },
   ],
 };
 
@@ -315,13 +296,6 @@ const enSlice: PortalSlice = {
     { ticker: 'CDCG', name: 'ČD Cargo', sub: 'CZ · Logistics', segment: 'Logistics', status: 'up', delta: '+2.1%', dir: 'up', last: 'May 10' },
     { ticker: 'TATR', name: 'Tatra Trucks', sub: 'CZ · OEM', segment: 'Automotive', status: 'warn', delta: '−1.4%', dir: 'dn', last: 'May 14' },
   ],
-  alerts: [
-    { id: 'a1', tone: 'dn', kind: 'Alert', target: 'Vítkovice Steel', body: 'Hot-rolled steel price dropped −5.8% WoW. Likely impact on 4 companies in your Watch List.', time: '14:32', fresh: true },
-    { id: 'a2', tone: 'warn', kind: 'Watch', target: 'VW Group', body: 'VW Group cut Mladá Boleslav production by −12% for H2 2026.', time: '12:08', fresh: true },
-    { id: 'a3', tone: 'up', kind: 'Positive', target: 'ČEZ a.s.', body: 'Q2 revenue beat consensus by +1.2 pp.', time: 'yesterday', fresh: false },
-    { id: 'a4', tone: 'warn', kind: 'Watching', target: 'CSRD H2', body: 'Third wave of CSRD reporting takes effect Jul 1. Affects 12 Watch List firms.', time: 'May 13', fresh: false },
-    { id: 'a5', tone: 'dn', kind: 'Alert', target: 'Tatra Trucks', body: 'Q2 EBITDA −1.4% Q/Q. Below analyst consensus by 0.8 pp.', time: 'May 12', fresh: false },
-  ],
 };
 
 const SLICES: Record<Lang, PortalSlice> = { cs: csSlice, en: enSlice };
@@ -332,9 +306,6 @@ export function getArchive(lang: Lang): ArchiveRow[] {
 export function getWatchlist(lang: Lang): WatchlistRow[] {
   return SLICES[lang].watchlist;
 }
-export function getAlerts(lang: Lang): AlertRow[] {
-  return SLICES[lang].alerts;
-}
 
 // Static risk-map widget data for the Sidebar (Sprint 1 placeholder).
 // Real numbers will be derived from srsc_scores in Sprint 5+ per §22.
@@ -344,10 +315,6 @@ export interface RiskMapData {
   low: number;
 }
 export const RISK_MAP: RiskMapData = { high: 3, med: 4, low: 2 };
-
-// Static count for the alerts badge in TitleBar + Sidebar until the alerts
-// view + DB query land.
-export const ALERTS_FRESH_COUNT = 2;
 
 // Static title-bar tickers (per CLAUDE.md they are intentionally mock).
 export interface TickerCell {

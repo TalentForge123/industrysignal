@@ -13,13 +13,16 @@
 // `@industrysignal/jobs/functions/alert-diff-scheduler.ts`; this module
 // stays I/O-only so the classifier can be unit-tested without DB.
 
-import { and, desc, eq, gte, isNotNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { Database } from '../client';
 import {
   alerts,
   companies,
   companyOfficers,
   insolvencyEvents,
+  organizationMembers,
+  organizations,
+  users,
   watchlistEntries,
   watchlists,
 } from '../schema';
@@ -190,4 +193,139 @@ export async function findRecentOfficerChanges(
     ...appointedRows.map((r) => ({ ...r, changeType: 'appointed' as const })),
     ...terminatedRows.map((r) => ({ ...r, changeType: 'terminated' as const })),
   ];
+}
+
+// ----- Read path (alerts feed) -----------------------------------------
+
+/** Row shape returned by `findAlertsForOrg`. `company` is left-joined on
+ *  (country_iso, target_ref) so we can derive a ticker from `legal_name`
+ *  in app code without a second query per row. */
+export interface AlertFeedRow {
+  alert: AlertRow;
+  company: typeof companies.$inferSelect | null;
+}
+
+/**
+ * Most-recent alerts for one org, newest first. Used by the /portal/alerts
+ * feed. Left-joins `company` on (country_iso, target_ref) for the rows
+ * whose `target_type = 'company'` — segment/region/macro alerts return
+ * with `company = null` and the view falls back to the embedded title.
+ *
+ * `limit` is the hard ceiling; the feed paginates client-side until the
+ * Sprint 5 "load more" lands.
+ */
+export async function findAlertsForOrg(
+  db: Database,
+  organizationId: string,
+  limit = 100,
+): Promise<AlertFeedRow[]> {
+  const rows = await db
+    .select({ alert: alerts, company: companies })
+    .from(alerts)
+    .leftJoin(
+      companies,
+      and(
+        eq(alerts.targetType, 'company'),
+        eq(companies.countryIso, alerts.countryIso),
+        eq(companies.registryId, alerts.targetRef),
+      ),
+    )
+    .where(eq(alerts.organizationId, organizationId))
+    .orderBy(desc(alerts.createdAt))
+    .limit(limit);
+  return rows;
+}
+
+/**
+ * Count of unacknowledged alerts for one org — used by the title-bar /
+ * sidebar badge. Hits the `alert_org_status_idx` covering index so the
+ * lookup is O(log n) regardless of total alert volume.
+ */
+export async function countFreshAlertsForOrg(
+  db: Database,
+  organizationId: string,
+): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(alerts)
+    .where(and(eq(alerts.organizationId, organizationId), eq(alerts.status, 'new')));
+  return row?.count ?? 0;
+}
+
+// ----- Delivery support (critical-alert email worker) -------------------
+
+export interface AlertWithContext {
+  alert: AlertRow;
+  /** Org row — for tenant name + display only. */
+  organization: typeof organizations.$inferSelect;
+  /** Joined company; null for segment/region/macro alerts. */
+  company: typeof companies.$inferSelect | null;
+}
+
+/**
+ * Load one alert plus its org + (optional) joined company. Used by the
+ * critical-alert email worker. Returns null when the alert doesn't
+ * exist (caller logs + acks the event so Inngest doesn't retry).
+ */
+export async function findAlertById(
+  db: Database,
+  alertId: string,
+): Promise<AlertWithContext | null> {
+  const [row] = await db
+    .select({ alert: alerts, organization: organizations, company: companies })
+    .from(alerts)
+    .innerJoin(organizations, eq(organizations.id, alerts.organizationId))
+    .leftJoin(
+      companies,
+      and(
+        eq(alerts.targetType, 'company'),
+        eq(companies.countryIso, alerts.countryIso),
+        eq(companies.registryId, alerts.targetRef),
+      ),
+    )
+    .where(eq(alerts.id, alertId))
+    .limit(1);
+  if (!row) return null;
+  return {
+    alert: row.alert,
+    organization: row.organization,
+    company: row.company,
+  };
+}
+
+export interface AlertRecipient {
+  userId: string;
+  email: string;
+  displayName: string | null;
+  role: 'admin' | 'analyst' | 'viewer';
+}
+
+/**
+ * Resolve email recipients for a critical alert. Returns admin + analyst
+ * members of the owning org — viewers are deliberately excluded from the
+ * critical channel per HANDOFF §6 (viewer = read-only, no actionable
+ * routing). The `role` is surfaced so the email body can address the
+ * admin separately from the analyst (e.g. CC vs primary) once the
+ * template grows there.
+ */
+export async function findAlertRecipientsForOrg(
+  db: Database,
+  organizationId: string,
+): Promise<AlertRecipient[]> {
+  const rows = await db
+    .select({
+      userId: users.id,
+      email: users.email,
+      displayName: users.name,
+      role: organizationMembers.role,
+    })
+    .from(organizationMembers)
+    .innerJoin(users, eq(users.id, organizationMembers.userId))
+    .where(
+      and(
+        eq(organizationMembers.organizationId, organizationId),
+        inArray(organizationMembers.role, ['admin', 'analyst']),
+      ),
+    );
+  return rows;
 }
