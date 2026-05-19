@@ -14,6 +14,7 @@ import type { Database } from '@industrysignal/db';
 import { alertDiffScheduler } from './functions/alert-diff-scheduler';
 import { companiesRefreshScheduler } from './functions/companies-refresh-scheduler';
 import { companyRefresh } from './functions/company-refresh';
+import { criticalAlertEmail } from './functions/critical-alert-email';
 import { macroRefreshScheduler } from './functions/macro-refresh-scheduler';
 
 export interface JobContext {
@@ -26,5 +27,6 @@ export function createFunctions(ctx: JobContext) {
     companyRefresh(ctx),
     macroRefreshScheduler(ctx),
     alertDiffScheduler(ctx),
+    criticalAlertEmail(ctx),
   ] as const;
 }

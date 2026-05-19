@@ -24,6 +24,12 @@ import { EventSchemas, Inngest } from 'inngest';
 //                               successful refresh so downstream signal
 //                               classifiers (Week 3+, §16) can react
 //                               without polling.
+//
+// `alerts/critical.created`   — outcome event. Emitted by the alert-diff
+//                               scheduler whenever a fresh row with
+//                               priority='critical' lands in the alert
+//                               table. Drives the per-recipient email
+//                               worker (`critical-alert-email`).
 
 type Events = {
   'company/refresh.requested': {
@@ -41,6 +47,13 @@ type Events = {
       aresChanged: boolean;
       isirEventCount: number;
       isirChanged: boolean;
+    };
+  };
+  'alerts/critical.created': {
+    data: {
+      alertId: string;
+      organizationId: string;
+      kind: string;
     };
   };
 };

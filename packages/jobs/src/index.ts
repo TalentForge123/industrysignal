@@ -14,3 +14,8 @@ export {
   type OfficerAlertInput,
   type OrgWatchPair,
 } from './alert-classifier';
+export {
+  sendCriticalAlertEmail,
+  type CriticalAlertEmailPayload,
+  type SendResult,
+} from './mail';

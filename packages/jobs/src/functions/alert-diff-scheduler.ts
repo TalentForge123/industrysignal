@@ -49,6 +49,14 @@ export function alertDiffScheduler({ db }: JobContext) {
         let emitted = 0;
         let deduplicated = 0;
         let unmatched = 0;
+        // Collected here, fired in a separate step below. Keeping the
+        // sendEvent out of this loop means a Postmark/Inngest outage
+        // doesn't stall the rest of the alert pipeline.
+        const criticalEvents: Array<{
+          alertId: string;
+          organizationId: string;
+          kind: string;
+        }> = [];
         for (const change of changes) {
           // Without a debtor IČO there's no company to map to a watchlist
           // entry — surface the count so we can spot data-quality issues
@@ -73,11 +81,27 @@ export function alertDiffScheduler({ db }: JobContext) {
               pair,
             });
             const inserted = await insertAlertIfNew(db, alert);
-            if (inserted) emitted++;
-            else deduplicated++;
+            if (inserted) {
+              emitted++;
+              if (inserted.priority === 'critical') {
+                criticalEvents.push({
+                  alertId: inserted.id,
+                  organizationId: inserted.organizationId,
+                  kind: inserted.kind,
+                });
+              }
+            } else {
+              deduplicated++;
+            }
           }
         }
-        return { processed: changes.length, emitted, deduplicated, unmatched };
+        return {
+          processed: changes.length,
+          emitted,
+          deduplicated,
+          unmatched,
+          criticalEvents,
+        };
       });
 
       const officers = await step.run('officer-alerts', async () => {
@@ -110,7 +134,27 @@ export function alertDiffScheduler({ db }: JobContext) {
         return { processed: changes.length, emitted, deduplicated, unmatched };
       });
 
-      return { insolvency, officers };
+      // Fan critical-priority inserts out to the email worker. Officer
+      // changes are 'high' priority and route to the (Sprint 5+) digest
+      // mailer; only insolvency surfaces here today.
+      //
+      // `sendEvent` must be a sibling step of `step.run`, not nested
+      // inside one — Inngest forbids that. We pre-collected the events
+      // inside the insolvency step's return value and dispatch them
+      // here.
+      let dispatchedCount = 0;
+      if (insolvency.criticalEvents.length > 0) {
+        await step.sendEvent(
+          'dispatch-critical-emails',
+          insolvency.criticalEvents.map((e) => ({
+            name: 'alerts/critical.created' as const,
+            data: e,
+          })),
+        );
+        dispatchedCount = insolvency.criticalEvents.length;
+      }
+
+      return { insolvency, officers, dispatched: dispatchedCount };
     },
   );
 }
