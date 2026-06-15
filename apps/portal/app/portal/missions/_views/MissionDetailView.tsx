@@ -655,6 +655,20 @@ function Deliverable({
   lang: 'cs' | 'en';
   onClose: () => void;
 }) {
+  // PDF + read-only share link (Block C). Generated server-side from the
+  // public /share/<token> page; the result links render below the toolbar.
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareInfo, setShareInfo] = useState<{ pdfUrl: string; shareUrl: string } | null>(null);
+  async function generateShare() {
+    setShareBusy(true);
+    try {
+      const res = await fetch(`/api/missions/${encodeURIComponent(brief.code)}/pdf`, { method: 'POST' });
+      if (res.ok) setShareInfo((await res.json()) as { pdfUrl: string; shareUrl: string });
+    } finally {
+      setShareBusy(false);
+    }
+  }
+
   const group = (title: string, role: EntityRole) => {
     const list = entities.filter((e) => e.role === role);
     if (!list.length) return null;
@@ -691,7 +705,27 @@ function Deliverable({
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 760, margin: '0 auto', background: 'var(--bg-card)', border: '1px solid var(--ln-border)', borderRadius: 'var(--r-md)', padding: 40 }}
       >
+        {shareInfo && (
+          <div
+            className="no-print"
+            style={{ marginBottom: 16, padding: '10px 14px', background: 'var(--accent-soft)', borderLeft: '2px solid var(--accent)', borderRadius: '0 var(--r-sm) var(--r-sm) 0', display: 'flex', flexDirection: 'column', gap: 6 }}
+          >
+            <a href={shareInfo.pdfUrl} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--accent-text)' }}>
+              ↓ {t(lang, 'md_dlv_share_pdf')}
+            </a>
+            <div style={{ fontSize: 11, color: 'var(--fg-tertiary)' }}>{t(lang, 'md_dlv_share_link')}</div>
+            <input
+              readOnly
+              value={shareInfo.shareUrl}
+              onFocus={(e) => e.currentTarget.select()}
+              style={{ ...inputStyle(), fontSize: 11, fontFamily: 'var(--font-mono)' }}
+            />
+          </div>
+        )}
         <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
+          <Button kind="ghost" icon="file-text" onClick={generateShare} disabled={shareBusy}>
+            {shareBusy ? t(lang, 'md_dlv_share_busy') : t(lang, 'md_dlv_share')}
+          </Button>
           <Button kind="primary" icon="download" onClick={() => window.print()}>
             {t(lang, 'md_dlv_print')}
           </Button>

@@ -284,6 +284,10 @@ const cs: Record<string, Entry> = {
   role_partner: 'PARTNER · KANÁL',
   // deliverable (client-facing export)
   md_dlv_print: 'Tisk / PDF',
+  md_dlv_share: 'PDF + sdílecí odkaz',
+  md_dlv_share_busy: 'Generuji…',
+  md_dlv_share_pdf: 'Stáhnout PDF',
+  md_dlv_share_link: 'Sdílecí odkaz (jen pro čtení)',
   md_dlv_header: 'INDUSTRYSIGNAL · DATOVÁ MAPA EXPORTNÍCH VZTAHŮ',
   md_dlv_competitors: 'Konkurenti — vazby k replikaci',
   md_dlv_targets: 'Cíloví odběratelé — koho oslovit',
@@ -712,6 +716,10 @@ const en: Record<string, Entry> = {
   role_partner: 'PARTNER · CHANNEL',
   // deliverable (client-facing export)
   md_dlv_print: 'Print / PDF',
+  md_dlv_share: 'PDF + share link',
+  md_dlv_share_busy: 'Generating…',
+  md_dlv_share_pdf: 'Download PDF',
+  md_dlv_share_link: 'Share link (read-only)',
   md_dlv_header: 'INDUSTRYSIGNAL · EXPORT RELATIONSHIP DATA MAP',
   md_dlv_competitors: 'Competitors — replicable relationships',
   md_dlv_targets: 'Target buyers — who to approach',
