@@ -71,6 +71,13 @@
       "when": 1781554843944,
       "tag": "0009_light_vivisector",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1781559299812,
+      "tag": "0010_flowery_ironclad",
+      "breakpoints": true
     }
   ]
 }

@@ -20,6 +20,8 @@ import {
   missionEntityLinks,
   missionOpportunities,
   missionTrends,
+  missionShares,
+  type MissionShareMode,
   type MissionIntent,
   type MissionEntityRole,
   type MissionEntityOrigin,
@@ -367,4 +369,61 @@ export async function removeMissionLink(
     .where(
       and(eq(missionEntityLinks.id, args.linkId), eq(missionEntityLinks.missionId, args.missionId)),
     );
+}
+
+// ============================================================
+// SHARE LINKS (read-only deliverable, full / teaser)
+// ============================================================
+
+export type MissionShareRow = typeof missionShares.$inferSelect;
+
+/** URL-safe random token for a share link. */
+function newShareToken(): string {
+  return crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+}
+
+export interface CreateShareArgs {
+  missionId: string;
+  mode?: MissionShareMode;
+  /** ISO string or Date; null/undefined = no expiry. */
+  expiresAt?: Date | null;
+  createdByUserId?: string | null;
+}
+
+/** Mint a new share link for a mission. Returns the row (with its token). */
+export async function createMissionShare(
+  db: Database,
+  args: CreateShareArgs,
+): Promise<MissionShareRow> {
+  const [row] = await db
+    .insert(missionShares)
+    .values({
+      missionId: args.missionId,
+      token: newShareToken(),
+      mode: args.mode ?? 'full',
+      expiresAt: args.expiresAt ?? null,
+      createdByUserId: args.createdByUserId ?? null,
+    })
+    .returning();
+  return row!;
+}
+
+/**
+ * Resolve a share token to its row. Returns null when unknown OR expired —
+ * the public page can't tell the two apart, which is the intended privacy
+ * behavior (don't leak that a token once existed).
+ */
+export async function findMissionShareByToken(
+  db: Database,
+  token: string,
+): Promise<MissionShareRow | null> {
+  const rows = await db
+    .select()
+    .from(missionShares)
+    .where(eq(missionShares.token, token))
+    .limit(1);
+  const row = rows[0];
+  if (!row) return null;
+  if (row.expiresAt && row.expiresAt.getTime() < Date.now()) return null;
+  return row;
 }

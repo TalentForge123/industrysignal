@@ -1124,6 +1124,36 @@ export const missionResearchMoves = pgTable(
   }),
 );
 
+// Read-only share links for a mission's deliverable. A token grants public
+// (no-auth) access to the relationship map — `full` shows everything,
+// `teaser` shows a blurred preview (counts + sectors + a couple of leads)
+// for qualification before revealing the full map. `expiresAt` null = no
+// expiry. Used for the M2C/TOS teaser flow (BUILD-HANDOFF §0).
+export const missionShareModeEnum = ['full', 'teaser'] as const;
+export type MissionShareMode = (typeof missionShareModeEnum)[number];
+
+export const missionShares = pgTable(
+  'mission_share',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    missionId: text('mission_id')
+      .notNull()
+      .references(() => missions.id, { onDelete: 'cascade' }),
+    token: text('token').notNull().unique(),
+    mode: text('mode', { enum: missionShareModeEnum }).notNull().default('full'),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    createdByUserId: text('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    missionIdx: index('mission_share_mission_idx').on(t.missionId),
+  }),
+);
+
 // ============================================================
 // RELATIONS — Drizzle query-builder JOIN support.
 // ============================================================
@@ -1269,6 +1299,14 @@ export const missionsRelations = relations(missions, ({ one, many }) => ({
   opportunities: many(missionOpportunities),
   trends: many(missionTrends),
   researchMoves: many(missionResearchMoves),
+  shares: many(missionShares),
+}));
+
+export const missionSharesRelations = relations(missionShares, ({ one }) => ({
+  mission: one(missions, {
+    fields: [missionShares.missionId],
+    references: [missions.id],
+  }),
 }));
 
 export const missionRubricCriteriaRelations = relations(missionRubricCriteria, ({ one }) => ({
