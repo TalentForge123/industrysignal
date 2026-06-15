@@ -1,0 +1,23 @@
+{
+  "name": "@industrysignal/connectors-fr",
+  "version": "0.0.0",
+  "private": true,
+  "description": "France data-source connectors. Implements the CountryConnector contract (HANDOFF §14) on free official sources: recherche-entreprises (companies + public dirigeants), BODACC (insolvency), BOAMP/TED (tenders), Eurostat Comext (trade flows). SIREN is the canonical entity id. No paid APIs.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src/**"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
+  }
+}
