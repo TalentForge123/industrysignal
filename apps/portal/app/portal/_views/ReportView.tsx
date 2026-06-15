@@ -1,22 +1,47 @@
 'use client';
 
 // Quarterly report view — Bloomberg-style dense grid (editorial header +
-// KPI strip + section rows with sidecar). 1:1 port of
-// ui_kits/portal/ReportView.jsx; only the data plumbing is different
-// (useLang() drives bilingual selection from lib/mock-data.ts; real DB
-// reads land with the editorial CMS in Sprint 4).
+// KPI strip + section rows with sidecar). Source of truth shifted from
+// the mock fixture (Sprint 1) to Postgres (Sprint 4): the parent server
+// component resolves the latest published row and hands a bilingual
+// `dbReport` payload here. When it's null (table empty in early dev),
+// the view falls back to the mock fixture with a small "preview" hint
+// — so the page still renders against a fresh DB.
 
 import { type CSSProperties } from 'react';
 import { t } from '@industrysignal/i18n';
 import { useLang } from '@industrysignal/i18n/client';
-import { getReport, type KpiDir } from '@/lib/mock-data';
+import { getReport, type KpiDir, type Report } from '@/lib/mock-data';
 
-export function ReportView() {
+interface Props {
+  dbReport: { cs: Report; en: Report } | null;
+}
+
+export function ReportView({ dbReport }: Props) {
   const [lang] = useLang();
-  const report = getReport(lang);
+  const report = dbReport ? dbReport[lang] : getReport(lang);
+  const fromDb = dbReport != null;
 
   return (
     <div style={{ background: 'var(--bg-app)', color: 'var(--fg-primary)', minHeight: '100%' }}>
+      {!fromDb ? (
+        <div
+          style={{
+            padding: '8px 24px',
+            background: 'var(--graphite-900)',
+            borderBottom: '1px solid var(--graphite-800)',
+            color: 'var(--fg-muted)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {lang === 'cs'
+            ? 'NÁHLED — žádný publikovaný report v DB, zobrazena ukázková data.'
+            : 'PREVIEW — no published report in DB, sample fixture shown.'}
+        </div>
+      ) : null}
       <header
         style={{
           display: 'grid',

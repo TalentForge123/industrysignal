@@ -1,0 +1,123 @@
+/* IndustrySignal Studio (internal CMS) — global styles.
+   Same tokens as the portal, but Studio defaults to the graphite
+   theme (terminal aesthetic = right home for editorial chrome). */
+
+@import '@industrysignal/tokens/tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg-app);
+  color: var(--fg-primary);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+textarea,
+input {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* Editorial chrome — column rule, mono labels, hairline borders.
+   Studio is internal so we trade some polish for legibility. */
+.studio-card {
+  border: 1px solid var(--graphite-800);
+  background: var(--graphite-1000);
+  padding: 14px 16px;
+}
+.studio-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.studio-hr {
+  border: 0;
+  border-top: 1px solid var(--graphite-800);
+  margin: 16px 0;
+}
+.studio-pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid var(--graphite-700);
+  color: var(--fg-tertiary);
+}
+.studio-pill[data-status='draft']     { color: var(--fg-tertiary); border-color: var(--graphite-700); }
+.studio-pill[data-status='review']    { color: var(--signal-warn); border-color: var(--signal-warn); }
+.studio-pill[data-status='published'] { color: var(--signal-up); border-color: var(--signal-up); }
+.studio-pill[data-status='archived']  { color: var(--fg-muted); border-color: var(--graphite-800); }
+
+.studio-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  background: var(--graphite-900);
+  color: var(--fg-primary);
+  border: 1px solid var(--graphite-700);
+  cursor: pointer;
+}
+.studio-btn:hover {
+  background: var(--graphite-800);
+  border-color: var(--amber-300);
+}
+.studio-btn[data-variant='primary'] {
+  background: var(--amber-300);
+  color: var(--graphite-1000);
+  border-color: var(--amber-300);
+  font-weight: 600;
+}
+.studio-btn[data-variant='danger'] {
+  border-color: var(--signal-down);
+  color: var(--signal-down);
+}
+.studio-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.studio-input,
+.studio-textarea {
+  width: 100%;
+  background: var(--graphite-1000);
+  border: 1px solid var(--graphite-800);
+  color: var(--fg-primary);
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  font-family: var(--font-sans);
+}
+.studio-input:focus,
+.studio-textarea:focus {
+  outline: none;
+  border-color: var(--amber-300);
+}
+.studio-textarea {
+  min-height: 80px;
+  resize: vertical;
+}

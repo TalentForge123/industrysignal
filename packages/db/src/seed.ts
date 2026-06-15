@@ -310,6 +310,315 @@ async function main() {
       ])
       .onConflictDoNothing();
 
+    // ----- Published report (Q3 2026) -------------------------------------
+    // Drives the portal /portal/report view to the DB path. The body
+    // mirrors the editorial shape parseReportBody expects (snake_case
+    // `key_ratios`, `related_alerts` at the top level; `body` is an
+    // array of paragraph strings per section).
+    const r = SEED_IDS.report.publishedQ3;
+    await db
+      .insert(schema.reports)
+      .values({
+        id: r.id,
+        slug: r.slug,
+        quarter: 'Q3 2026',
+        status: 'published',
+        titleCs: r.titleCs,
+        titleEn: r.titleEn,
+        bodyCs: {
+          lead: 'Seedovaný report pro E2E — ověřuje, že portal čte z databáze, nikoli z mock fixture.',
+          key_ratios: [
+            { label: 'HDP Q/Q', value: '+0,2 %', delta: '−0,2 p.b.', dir: 'dn' },
+          ],
+          sections: [
+            {
+              id: 'macro',
+              kind: 'Makro',
+              title: r.sectionTitleCs,
+              summary: 'Krátký souhrn makro vývoje pro Q3 2026.',
+              body: ['První testovací odstavec.', 'Druhý testovací odstavec.'],
+            },
+          ],
+          related_alerts: [],
+        },
+        bodyEn: {
+          lead: 'Seeded report for E2E — verifies the portal reads from the database rather than the mock fixture.',
+          key_ratios: [{ label: 'GDP Q/Q', value: '+0.2%', delta: '−0.2 pp', dir: 'dn' }],
+          sections: [
+            {
+              id: 'macro',
+              kind: 'Macro',
+              title: r.sectionTitleEn,
+              summary: 'Brief macro overview for Q3 2026.',
+              body: ['First test paragraph.', 'Second test paragraph.'],
+            },
+          ],
+          related_alerts: [],
+        },
+        createdBy: SEED_IDS.users.analyst,
+        submittedAt: daysAgo(2),
+        submittedBy: SEED_IDS.users.analyst,
+        reviewerId: SEED_IDS.users.admin,
+        publishedAt: daysAgo(1),
+        publishedBy: SEED_IDS.users.admin,
+      })
+      .onConflictDoNothing();
+
+    // ----- Mission (M2C → DE · replicate) ---------------------------------
+    // The canonical prototype seed from MissionData.js — drives the
+    // /portal/missions detail view to the DB path (Sprint B). Brief +
+    // rubric + entities ("kdo s kým") + opportunities, with the four
+    // worksWith edges persisted as mission_entity_link rows.
+    const m = SEED_IDS.mission.m2cDe;
+    const me = SEED_IDS.mission.entities;
+
+    await db
+      .insert(schema.missions)
+      .values({
+        id: m.id,
+        code: m.code,
+        ownerUserId: SEED_IDS.users.admin,
+        clientName: 'M2C',
+        clientLegal: 'Mark2 Corporation Czech a.s.',
+        clientSector: 'Integrovaný facility management',
+        clientNace: '81.10',
+        clientProducts: [
+          'Úklidové služby',
+          'Technická správa budov',
+          'Ostraha a security',
+          'Energetický management',
+          'Správa zeleně',
+        ],
+        intent: 'replicate',
+        sourceMarket: 'CZ',
+        targetMarket: 'DE',
+        segmentNace: '81.10',
+        segmentKeywords: [
+          'integrated facility management',
+          'Gebäudemanagement',
+          'technisches FM',
+          'infrastrukturelles FM',
+          'Reinigung',
+          'Sicherheitsdienst',
+        ],
+        ask: 'Najít firmy, které obchodují s našimi konkurenty na německém trhu — koho oslovit, kdo s kým spolupracuje, kde jsou stávající dodavatelé drazí a pomalí.',
+        deadline: '2026-06-11',
+        status: 'active',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(schema.missionRubricCriteria)
+      .values([
+        {
+          missionId: m.id,
+          text: 'Je klientem / dodavatelem některého z německých FM konkurentů (replikovatelná vazba)',
+          weight: 'vysoká',
+          sortOrder: 0,
+        },
+        {
+          missionId: m.id,
+          text: 'Má velké portfolio nemovitostí nebo více provozoven v DE (objem poptávky po FM)',
+          weight: 'vysoká',
+          sortOrder: 1,
+        },
+        {
+          missionId: m.id,
+          text: 'Stávající FM dodavatel je drahý / pomalý / nadnárodní bez lokální flexibility',
+          weight: 'střední',
+          sortOrder: 2,
+        },
+        {
+          missionId: m.id,
+          text: 'Vazba na ČR (česky vlastněný provoz v DE, závod u hranic — Sasko, Bavorsko)',
+          weight: 'střední',
+          sortOrder: 3,
+        },
+        {
+          missionId: m.id,
+          text: 'Mittelstand segment — velcí hráči ho neobsluhují flexibilně (sweet spot M2C)',
+          weight: 'střední',
+          sortOrder: 4,
+        },
+      ])
+      .onConflictDoNothing();
+
+    await db
+      .insert(schema.missionEntities)
+      .values([
+        {
+          id: me.m2c,
+          missionId: m.id,
+          role: 'client',
+          name: 'M2C',
+          city: 'Praha · CZ',
+          note: 'Klient. Integrovaný FM, lídr v ČR. Cílí na replikaci CZ modelu v DE.',
+          source: 'Klientský brief',
+          verify: false,
+          origin: 'db_seed',
+        },
+        {
+          id: me.apleona,
+          missionId: m.id,
+          role: 'competitor',
+          name: 'Apleona GmbH',
+          city: 'Neu-Isenburg',
+          note: 'Lídr integrovaného FM v DE (ex-Bilfinger HSG). Enterprise fokus → Mittelstand mezera.',
+          source: 'Handelsregister / veřejný profil',
+          verify: false,
+          origin: 'db_seed',
+        },
+        {
+          id: me.dussmann,
+          missionId: m.id,
+          role: 'competitor',
+          name: 'Dussmann Group',
+          city: 'Berlin',
+          note: 'FM + multiservice + catering. Silný v healthcare a public sector.',
+          source: 'Veřejný profil',
+          verify: false,
+          origin: 'db_seed',
+        },
+        {
+          id: me.wisag,
+          missionId: m.id,
+          role: 'competitor',
+          name: 'WISAG',
+          city: 'Frankfurt a. M.',
+          note: 'FM + aviation services. Dominantní na letištích.',
+          source: 'Veřejný profil',
+          verify: false,
+          origin: 'db_seed',
+        },
+        {
+          id: me.piepenbrock,
+          missionId: m.id,
+          role: 'competitor',
+          name: 'Piepenbrock',
+          city: 'Osnabrück',
+          note: 'Úklid + infrastrukturní FM. Rodinný Mittelstand-friendly hráč — přímý vzor pro M2C.',
+          source: 'Veřejný profil',
+          verify: false,
+          origin: 'db_seed',
+        },
+        {
+          id: me.db,
+          missionId: m.id,
+          role: 'target',
+          name: 'Deutsche Bank',
+          city: 'Frankfurt a. M.',
+          note: 'Velké kancelářské portfolio. FM kontrakt u Apleony — replikovatelný vztah.',
+          source: 'OVĚŘIT — inferováno z trhu',
+          verify: true,
+          origin: 'db_seed',
+        },
+        {
+          id: me.siemens,
+          missionId: m.id,
+          role: 'target',
+          name: 'Siemens Real Estate',
+          city: 'München',
+          note: 'Rozsáhlé výrobní + admin portfolio. Multi-supplier FM model.',
+          source: 'OVĚŘIT — inferováno z trhu',
+          verify: true,
+          origin: 'db_seed',
+        },
+        {
+          id: me.fraport,
+          missionId: m.id,
+          role: 'target',
+          name: 'Fraport (letiště FRA)',
+          city: 'Frankfurt a. M.',
+          note: 'Infrastruktura náročná na FM. Vazba na WISAG (aviation).',
+          source: 'OVĚŘIT — inferováno z trhu',
+          verify: true,
+          origin: 'db_seed',
+        },
+        {
+          id: me.charite,
+          missionId: m.id,
+          role: 'target',
+          name: 'Charité Berlin',
+          city: 'Berlin',
+          note: 'Největší univerzitní nemocnice v Evropě. Healthcare FM (Dussmann).',
+          source: 'OVĚŘIT — inferováno z trhu',
+          verify: true,
+          origin: 'db_seed',
+        },
+        {
+          id: me.ahk,
+          missionId: m.id,
+          role: 'partner',
+          name: 'ČNOPK / AHK',
+          city: 'Praha · Berlin',
+          note: 'Česko-německá obchodní komora — door-opener pro CZ firmy vstupující do DE.',
+          source: 'Veřejný subjekt',
+          verify: false,
+          origin: 'db_seed',
+        },
+        {
+          id: me.gefma,
+          missionId: m.id,
+          role: 'partner',
+          name: 'GEFMA e.V.',
+          city: 'Bonn',
+          note: 'Německý FM svaz + standardy. Členství = kredibilita + leady.',
+          source: 'Veřejný subjekt',
+          verify: false,
+          origin: 'db_seed',
+        },
+      ])
+      .onConflictDoNothing();
+
+    // worksWith edges from MissionData — competitor ↔ target "serves" links.
+    await db
+      .insert(schema.missionEntityLinks)
+      .values([
+        { missionId: m.id, fromEntity: me.apleona, toEntity: me.db, kind: 'serves' },
+        { missionId: m.id, fromEntity: me.apleona, toEntity: me.siemens, kind: 'serves' },
+        { missionId: m.id, fromEntity: me.dussmann, toEntity: me.charite, kind: 'serves' },
+        { missionId: m.id, fromEntity: me.wisag, toEntity: me.fraport, kind: 'serves' },
+      ])
+      .onConflictDoNothing();
+
+    await db
+      .insert(schema.missionOpportunities)
+      .values([
+        {
+          missionId: m.id,
+          tag: 'MEZERA',
+          title: 'Mittelstand pod radarem velkých',
+          body: 'Apleona, Dussmann i WISAG cílí na enterprise. Německý Mittelstand (50–500 provozoven) je obsluhovaný nepružně a draze — přesně sweet spot CZ modelu M2C.',
+          tone: 'up',
+          sortOrder: 0,
+        },
+        {
+          missionId: m.id,
+          tag: 'VAZBA CZ',
+          title: 'Česky vlastněné provozy a příhraničí',
+          body: 'Závody v Sasku a Bavorsku (do 150 km od hranic) lze obsluhovat z české základny bez nákladové nevýhody. Začít u česky vlastněných firem s provozem v DE.',
+          tone: 'info',
+          sortOrder: 1,
+        },
+        {
+          missionId: m.id,
+          tag: 'CENA/RYCHLOST',
+          title: 'Drazí a pomalí inkumbenti',
+          body: 'Stejný vzorec jako u strojírenství: dodávky z velkých DE hráčů jsou drahé a pomalé. M2C konkuruje flexibilitou a rychlostí mobilizace.',
+          tone: 'warn',
+          sortOrder: 2,
+        },
+        {
+          missionId: m.id,
+          tag: 'KANÁL',
+          title: 'ČNOPK + GEFMA jako vstupní brána',
+          body: 'Členství v GEFMA dodá kredibilitu na trhu citlivém na lokální reference; ČNOPK otevírá dveře k CZ-vázaným odběratelům.',
+          tone: 'info',
+          sortOrder: 3,
+        },
+      ])
+      .onConflictDoNothing();
+
     console.log('[db:seed] done — fixtures available under SEED_IDS in packages/db/src/seed.ts');
   } finally {
     await client.end();

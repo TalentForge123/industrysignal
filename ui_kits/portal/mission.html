@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="cs" data-theme="editorial">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IndustrySignal · Mission · M2C → DE</title>
+  <link rel="stylesheet" href="tokens.css">
+  <style>
+    /* This is a scrolling page, not the fixed app shell — override the kit defaults. */
+    html, body, #root { height: auto; }
+    body { overflow: auto; background: var(--bg-app); font-family: var(--font-sans); }
+
+    .is-pulse::after {
+      content: ''; position: absolute; inset: -3px;
+      border-radius: 50%; border: 1px solid currentColor;
+      animation: ispulse 1.6s ease-out infinite; opacity: 0.6; pointer-events: none;
+    }
+    @keyframes ispulse { 0% { transform: scale(0.6); opacity: 0.7; } 100% { transform: scale(2.0); opacity: 0; } }
+
+    /* Top strip */
+    .topstrip {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; gap: 14px;
+      height: 48px; padding: 0 24px;
+      background: var(--bg-panel); border-bottom: 1px solid var(--ln-border);
+    }
+    .wordmark { display: flex; align-items: center; gap: 8px; font-family: var(--font-serif); font-style: italic; font-size: 16px; color: var(--fg-primary); }
+    .wordmark .mark { width: 13px; height: 13px; background: var(--amber-100); border-radius: 2px; }
+    .crumb { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--fg-tertiary); text-transform: uppercase; }
+
+    select { -webkit-appearance: none; appearance: none; }
+
+    /* Print: only the client deliverable */
+    @media print {
+      .topstrip, .no-print { display: none !important; }
+      body, html { background: #fff; }
+      .deliverable { box-shadow: none !important; border: none !important; max-width: 100% !important; padding: 0 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topstrip">
+    <div class="wordmark"><span class="mark"></span>Industry<strong style="font-style:normal;font-weight:600;">Signal</strong></div>
+    <span class="crumb">Missions</span>
+    <span class="crumb" style="color:var(--fg-muted);">/</span>
+    <span class="crumb" style="color:var(--accent-text);">M2C → DE</span>
+  </div>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script src="MissionData.js"></script>
+  <script type="text/babel" src="primitives.jsx"></script>
+  <script type="text/babel" src="MissionGraph.jsx"></script>
+  <script type="text/babel" src="MissionResearch.jsx"></script>
+  <script type="text/babel" src="MissionIntake.jsx"></script>
+  <script type="text/babel" src="MissionView.jsx"></script>
+  <script type="text/babel">
+    ReactDOM.createRoot(document.getElementById('root')).render(<MissionView />);
+  </script>
+</body>
+</html>

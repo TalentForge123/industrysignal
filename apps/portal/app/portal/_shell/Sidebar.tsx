@@ -42,6 +42,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     titleKey: 'nav_monitor',
     items: [
+      { id: 'missions', code: 'MSN', labelKey: 'nav_missions', href: '/portal/missions' },
       { id: 'watchlist', code: 'WTCH', labelKey: 'nav_watchlist', href: '/portal/watchlist' },
       { id: 'alerts', code: 'ALRT', labelKey: 'nav_alerts_full', href: '/portal/alerts', badged: true },
     ],

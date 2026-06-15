@@ -10,6 +10,7 @@
     "csu:fetch": "tsx src/cli/csu-fetch.ts",
     "isir:fetch": "tsx src/cli/isir-fetch.ts",
     "justice:fetch": "tsx src/cli/justice-fetch.ts",
+    "pdf:render": "tsx src/cli/pdf-render.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

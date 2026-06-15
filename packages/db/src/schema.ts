@@ -232,6 +232,31 @@ export const alerts = pgTable(
 export const reportStatusEnum = ['draft', 'review', 'published', 'archived'] as const;
 export type ReportStatus = (typeof reportStatusEnum)[number];
 
+// Sprint 4 introduces the editorial CMS (HANDOFF §4 + §8 Week 4). A report
+// is the periodic publication shipped to subscribers — quarterly, gated by
+// human review. The `body_*` JSONB columns hold the canonical shape:
+//
+//   {
+//     "lead": "string",
+//     "key_ratios": [{ "label","value","delta","dir" }],
+//     "sections": [{
+//       "id","kind","title","summary","body":[...paragraphs],
+//       "kpis":[{...}],
+//       "sources":[{"n":1,"label","url"}]
+//     }],
+//     "related_alerts": [{ "ticker","delta","dir" }]
+//   }
+//
+// The shape stays JSONB rather than relational sub-tables because (a) it
+// is editorial copy that mutates as a whole during review, and (b) it
+// must round-trip 1:1 with the prototype's data.js. A Zod parser lives
+// in apps/portal/lib/reports.ts; schema enforcement is at the app layer.
+//
+// Workflow column semantics (HANDOFF §4 — "vždy ji prochází editor"):
+//   draft     → analyst writes / LLM-drafts content
+//   review    → submitForReview() — locked from analyst edits, reviewer assigned
+//   published → approveAndPublish() — visible to portal subscribers, pdfs generated
+//   archived  → superseded by a newer quarter, kept for /archive view
 export const reports = pgTable('report', {
   id: text('id')
     .primaryKey()
@@ -241,18 +266,133 @@ export const reports = pgTable('report', {
   status: text('status', { enum: reportStatusEnum }).notNull().default('draft'),
   titleCs: text('title_cs').notNull(),
   titleEn: text('title_en').notNull(),
-  // Structured editorial content: { sections: [{ id, title, content, sources, ... }] }.
-  // Strict shape lands with the Studio app in Sprint 4.
   bodyCs: jsonb('body_cs'),
   bodyEn: jsonb('body_en'),
+
+  // Workflow ownership — every transition is recorded both on the row
+  // (denormalized for fast lookups) and in `report_audit` for the full
+  // history. NULL on rows that haven't reached a given step yet.
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  submittedAt: timestamp('submitted_at', { withTimezone: true }),
+  submittedBy: text('submitted_by').references(() => users.id, { onDelete: 'set null' }),
+  reviewerId: text('reviewer_id').references(() => users.id, { onDelete: 'set null' }),
+  reviewerNotes: text('reviewer_notes'),
+
   publishedAt: timestamp('published_at', { withTimezone: true }),
+  publishedBy: text('published_by').references(() => users.id, { onDelete: 'set null' }),
   pdfUrlCs: text('pdf_url_cs'),
   pdfUrlEn: text('pdf_url_en'),
+
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
     .default(sql`now()`),
-});
+}, (t) => ({
+  // Fast path for /portal/report — "give me the latest published issue".
+  statusPublishedIdx: index('report_status_published_idx').on(
+    t.status,
+    t.publishedAt,
+  ),
+}));
+
+// Append-only history of report state transitions. The Studio "Activity"
+// panel reads this to render a per-report audit trail; auto-recompute
+// jobs (Sprint 5+) also write `from_status='auto'` entries here when an
+// LLM enrichment run mutates section bodies.
+export const reportAuditActionEnum = [
+  'create',
+  'edit',
+  'submit_for_review',
+  'reject',
+  'publish',
+  'archive',
+  'llm_draft',
+] as const;
+export type ReportAuditAction = (typeof reportAuditActionEnum)[number];
+
+export const reportAudit = pgTable(
+  'report_audit',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    reportId: text('report_id')
+      .notNull()
+      .references(() => reports.id, { onDelete: 'cascade' }),
+    action: text('action', { enum: reportAuditActionEnum }).notNull(),
+    actorId: text('actor_id').references(() => users.id, { onDelete: 'set null' }),
+    fromStatus: text('from_status', { enum: reportStatusEnum }),
+    toStatus: text('to_status', { enum: reportStatusEnum }),
+    note: text('note'),
+    metadata: jsonb('metadata'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    reportCreatedIdx: index('report_audit_report_created_idx').on(t.reportId, t.createdAt),
+  }),
+);
+
+// ============================================================
+// LLM CALLS — cache + audit of model invocations (§5).
+// ============================================================
+//
+// Every Claude / OpenAI call passes through here. `cache_key` is the
+// content hash of (model + prompt + temperature + input payload); a hit
+// skips the network round-trip and surfaces the prior response. Editorial
+// drafts cache per-quarter (they never regenerate after publish);
+// classification/extraction calls cache by input content.
+//
+// `kind` distinguishes call shape: 'segment_draft' (Sonnet editorial
+// synthesis per §4), 'vanity_extract' (Haiku structured extract per
+// §15.8), 'alert_classify' (Haiku ranks news as critical/high/normal),
+// 'pdf_summary' (Sonnet TL;DR for PDF cover). New kinds added as needed.
+
+export const llmCallKindEnum = [
+  'segment_draft',
+  'vanity_extract',
+  'alert_classify',
+  'pdf_summary',
+  'mission_research',
+  'other',
+] as const;
+export type LlmCallKind = (typeof llmCallKindEnum)[number];
+
+export const llmCallStatusEnum = ['ok', 'error', 'rate_limited'] as const;
+export type LlmCallStatus = (typeof llmCallStatusEnum)[number];
+
+export const llmCalls = pgTable(
+  'llm_call',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    kind: text('kind', { enum: llmCallKindEnum }).notNull(),
+    // SHA-256 hex of model + system + user + temperature. Unique so a
+    // re-run with identical inputs is a hard no-op via ON CONFLICT.
+    cacheKey: text('cache_key').notNull(),
+    model: text('model').notNull(), // 'claude-haiku-4-5' | 'claude-sonnet-4-5' | ...
+    promptId: text('prompt_id'), // optional FK-by-key to the prompts catalog (Sprint 6+)
+    promptVersion: text('prompt_version'),
+    systemPrompt: text('system_prompt'),
+    input: jsonb('input').notNull(), // structured payload (segment, quarter, source ids)
+    output: jsonb('output'), // Claude's parsed JSON (or text in `output.text`)
+    tokensIn: integer('tokens_in'),
+    tokensOut: integer('tokens_out'),
+    costUsd: numeric('cost_usd'),
+    latencyMs: integer('latency_ms'),
+    status: text('status', { enum: llmCallStatusEnum }).notNull().default('ok'),
+    errorMessage: text('error_message'),
+    // Back-pointer for accountability — which report/alert/mission did
+    // this call serve? Free-form text so we don't have to add a column
+    // per consumer; convention is `<entity>:<id>` e.g. `report:rep-2026-q2`.
+    consumerRef: text('consumer_ref'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    cacheKeyUnique: uniqueIndex('llm_call_cache_key_unique').on(t.cacheKey),
+    consumerIdx: index('llm_call_consumer_idx').on(t.consumerRef),
+  }),
+);
 
 // ============================================================
 // SOURCES — registry of data sources (§3).
@@ -719,6 +859,272 @@ export const macroObservations = pgTable(
 );
 
 // ============================================================
+// MISSIONS — one relationship map per client engagement (§3, §13).
+// ============================================================
+//
+// A mission is the unit of paid work: "build M2C a relationship map for
+// the German FM market". The canonical data shape is `MissionData.js`
+// from the approved prototype — brief + relevance rubric + entities
+// ("kdo s kým") + opportunities (gap analysis).
+//
+// Tables are deliberately namespaced `mission_*` rather than the bare
+// `entities` / `entity_links` of BUILD-HANDOFF §3: the bare names are
+// reserved by the schema header for the global §15 entity-resolution
+// graph that lands with the Mission engine. These mission_-scoped tables
+// are the per-mission, operator-curated graph — every row belongs to
+// exactly one mission and carries a `source` + `verify` flag (USP:
+// source-or-nothing, §6).
+
+export const missionIntentEnum = [
+  'replicate',
+  'expand',
+  'scout',
+  'defend',
+  'acquire',
+] as const;
+export type MissionIntent = (typeof missionIntentEnum)[number];
+
+export const missionStatusEnum = ['draft', 'active', 'delivered', 'monitoring'] as const;
+export type MissionStatus = (typeof missionStatusEnum)[number];
+
+export const missions = pgTable(
+  'mission',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    // Human-facing case code — 'MSN-2026-014'. Unique across all tenants.
+    code: text('code').notNull().unique(),
+    // The client this map is built for, and the operator who owns it.
+    // Both nullable: a draft can exist before a client org is provisioned,
+    // and owner is set-null on user deletion to preserve the mission.
+    clientOrgId: text('client_org_id').references(() => organizations.id, {
+      onDelete: 'set null',
+    }),
+    ownerUserId: text('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
+
+    // Client identity snapshot from the brief (§13). Denormalized rather
+    // than FK'd because the client may not be a registered org/company in
+    // our DB yet — the brief is captured verbatim from the intake call.
+    clientName: text('client_name'),
+    clientLegal: text('client_legal'),
+    clientSector: text('client_sector'),
+    clientNace: text('client_nace'),
+    // Service lines (MissionData brief.client.products) — fed into the AI
+    // research prompt. text[] so the wizard can edit them as a list.
+    clientProducts: text('client_products').array().notNull().default(sql`'{}'::text[]`),
+
+    intent: text('intent', { enum: missionIntentEnum }).notNull(),
+    sourceMarket: text('source_market'), // ISO-ish market code, 'CZ'
+    targetMarket: text('target_market'), // 'DE'
+
+    segmentNace: text('segment_nace'),
+    segmentKeywords: text('segment_keywords').array().notNull().default(sql`'{}'::text[]`),
+
+    // The client's ask in their own words — drives research + the
+    // deliverable header. Kept as free text.
+    ask: text('ask'),
+    deadline: date('deadline'),
+
+    status: text('status', { enum: missionStatusEnum }).notNull().default('active'),
+
+    // Deliverable subtitle + trend-report cadence labels, captured verbatim
+    // from the brief (TOS seed fields). Free text — display only.
+    deliverableNote: text('deliverable_note'),
+    trendQuarter: text('trend_quarter'),
+    nextRefresh: text('next_refresh'),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (t) => ({
+    ownerIdx: index('mission_owner_idx').on(t.ownerUserId, t.status),
+    clientOrgIdx: index('mission_client_org_idx').on(t.clientOrgId),
+  }),
+);
+
+// Relevance rubric — Lukáš's "brain" externalized as data, not code
+// (BUILD-HANDOFF §3). These criteria go verbatim into the AI research
+// prompt and are editable in the UI. One row per criterion; `sortOrder`
+// drives the numbered "01, 02, ..." display in the prototype.
+export const rubricWeightEnum = ['vysoká', 'střední', 'nízká'] as const;
+export type RubricWeight = (typeof rubricWeightEnum)[number];
+
+export const missionRubricCriteria = pgTable(
+  'mission_rubric_criterion',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    missionId: text('mission_id')
+      .notNull()
+      .references(() => missions.id, { onDelete: 'cascade' }),
+    text: text('text').notNull(),
+    weight: text('weight', { enum: rubricWeightEnum }).notNull(),
+    sortOrder: integer('sort_order').notNull().default(0),
+  },
+  (t) => ({
+    missionIdx: index('mission_rubric_criterion_mission_idx').on(t.missionId, t.sortOrder),
+  }),
+);
+
+// Players on the map. role: client (center) | competitor | target | partner.
+// `source` is mandatory (USP); when it's an estimate, `verify=true` flags
+// the OVĚŘIT badge. `origin` records how the row arrived — manual entry,
+// AI research, client CSV upload, or the seed fixture.
+export const missionEntityRoleEnum = ['client', 'competitor', 'target', 'partner'] as const;
+export type MissionEntityRole = (typeof missionEntityRoleEnum)[number];
+
+export const missionEntityOriginEnum = ['manual', 'ai', 'client_upload', 'db_seed'] as const;
+export type MissionEntityOrigin = (typeof missionEntityOriginEnum)[number];
+
+// Operator triage priority for a player (mostly targets). null = unranked.
+export const missionEntityPriorityEnum = ['high', 'medium', 'low'] as const;
+export type MissionEntityPriority = (typeof missionEntityPriorityEnum)[number];
+
+export const missionEntities = pgTable(
+  'mission_entity',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    missionId: text('mission_id')
+      .notNull()
+      .references(() => missions.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    role: text('role', { enum: missionEntityRoleEnum }).notNull(),
+    city: text('city'),
+    note: text('note'),
+    // Role / department, NEVER a fabricated person name (§6 guardrail).
+    decisionMaker: text('decision_maker'),
+    source: text('source'),
+    verify: boolean('verify').notNull().default(false),
+    origin: text('origin', { enum: missionEntityOriginEnum }).notNull().default('manual'),
+    priority: text('priority', { enum: missionEntityPriorityEnum }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    missionIdx: index('mission_entity_mission_idx').on(t.missionId, t.role),
+  }),
+);
+
+// Edges — "kdo s kým". `kind` styles the edge in the radial graph
+// (replicate = client→competitor, serves = competitor↔target,
+// channel = client→partner, supplier).
+export const missionLinkKindEnum = ['serves', 'replicate', 'channel', 'supplier'] as const;
+export type MissionLinkKind = (typeof missionLinkKindEnum)[number];
+
+export const missionEntityLinks = pgTable(
+  'mission_entity_link',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    missionId: text('mission_id')
+      .notNull()
+      .references(() => missions.id, { onDelete: 'cascade' }),
+    fromEntity: text('from_entity')
+      .notNull()
+      .references(() => missionEntities.id, { onDelete: 'cascade' }),
+    toEntity: text('to_entity')
+      .notNull()
+      .references(() => missionEntities.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: missionLinkKindEnum }).notNull().default('serves'),
+  },
+  (t) => ({
+    // One edge per unordered (from, to) pair within a mission — the graph
+    // dedupes anyway, this keeps the data clean and re-runs idempotent.
+    pairUnique: uniqueIndex('mission_entity_link_pair_unique').on(
+      t.missionId,
+      t.fromEntity,
+      t.toEntity,
+    ),
+    missionIdx: index('mission_entity_link_mission_idx').on(t.missionId),
+  }),
+);
+
+// Opportunities / gap analysis — editorial blocks shown in the detail
+// view and the client deliverable. `tone` maps to the Pill color.
+export const missionOpportunityToneEnum = ['up', 'info', 'warn', 'down'] as const;
+export type MissionOpportunityTone = (typeof missionOpportunityToneEnum)[number];
+
+export const missionOpportunities = pgTable(
+  'mission_opportunity',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    missionId: text('mission_id')
+      .notNull()
+      .references(() => missions.id, { onDelete: 'cascade' }),
+    tag: text('tag'),
+    title: text('title'),
+    body: text('body'),
+    tone: text('tone', { enum: missionOpportunityToneEnum }).notNull().default('info'),
+    sortOrder: integer('sort_order').notNull().default(0),
+  },
+  (t) => ({
+    missionIdx: index('mission_opportunity_mission_idx').on(t.missionId, t.sortOrder),
+  }),
+);
+
+// Macro trends behind the mission thesis — territory / sector signals with
+// a headline metric and a source. `validated` flags a confirmed figure vs.
+// one still to verify. `tone` reuses the opportunity tone scale. Rendered
+// in the detail trend report.
+export const missionTrends = pgTable(
+  'mission_trend',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    missionId: text('mission_id')
+      .notNull()
+      .references(() => missions.id, { onDelete: 'cascade' }),
+    territory: text('territory'),
+    sector: text('sector'),
+    quarter: text('quarter'),
+    title: text('title'),
+    body: text('body'),
+    metric: text('metric'),
+    source: text('source'),
+    validated: boolean('validated').notNull().default(false),
+    tone: text('tone', { enum: missionOpportunityToneEnum }).notNull().default('info'),
+    sortOrder: integer('sort_order').notNull().default(0),
+  },
+  (t) => ({
+    missionIdx: index('mission_trend_mission_idx').on(t.missionId, t.sortOrder),
+  }),
+);
+
+// Research moves — the t1..t4 tasks that drive connector runs (the
+// prototype's brief.researchMoves). `ref` is the stable handle a connector
+// keys off; `role` is the entity role the move hunts for. Not shown in the
+// detail view — consumed by the research/connector pipeline.
+export const missionResearchMoves = pgTable(
+  'mission_research_move',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    missionId: text('mission_id')
+      .notNull()
+      .references(() => missions.id, { onDelete: 'cascade' }),
+    ref: text('ref').notNull(),
+    label: text('label'),
+    role: text('role', { enum: missionEntityRoleEnum }),
+    task: text('task'),
+    sortOrder: integer('sort_order').notNull().default(0),
+  },
+  (t) => ({
+    missionIdx: index('mission_research_move_mission_idx').on(t.missionId, t.sortOrder),
+    refUnique: uniqueIndex('mission_research_move_ref_unique').on(t.missionId, t.ref),
+  }),
+);
+
+// ============================================================
 // RELATIONS — Drizzle query-builder JOIN support.
 // ============================================================
 
@@ -810,5 +1216,113 @@ export const macroObservationsRelations = relations(macroObservations, ({ one })
   indicator: one(macroIndicators, {
     fields: [macroObservations.indicatorId],
     references: [macroIndicators.id],
+  }),
+}));
+
+export const reportsRelations = relations(reports, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [reports.createdBy],
+    references: [users.id],
+    relationName: 'report_creator',
+  }),
+  submitter: one(users, {
+    fields: [reports.submittedBy],
+    references: [users.id],
+    relationName: 'report_submitter',
+  }),
+  reviewer: one(users, {
+    fields: [reports.reviewerId],
+    references: [users.id],
+    relationName: 'report_reviewer',
+  }),
+  publisher: one(users, {
+    fields: [reports.publishedBy],
+    references: [users.id],
+    relationName: 'report_publisher',
+  }),
+  audit: many(reportAudit),
+}));
+
+export const reportAuditRelations = relations(reportAudit, ({ one }) => ({
+  report: one(reports, {
+    fields: [reportAudit.reportId],
+    references: [reports.id],
+  }),
+  actor: one(users, {
+    fields: [reportAudit.actorId],
+    references: [users.id],
+  }),
+}));
+
+export const missionsRelations = relations(missions, ({ one, many }) => ({
+  clientOrg: one(organizations, {
+    fields: [missions.clientOrgId],
+    references: [organizations.id],
+  }),
+  owner: one(users, {
+    fields: [missions.ownerUserId],
+    references: [users.id],
+  }),
+  rubric: many(missionRubricCriteria),
+  entities: many(missionEntities),
+  links: many(missionEntityLinks),
+  opportunities: many(missionOpportunities),
+  trends: many(missionTrends),
+  researchMoves: many(missionResearchMoves),
+}));
+
+export const missionRubricCriteriaRelations = relations(missionRubricCriteria, ({ one }) => ({
+  mission: one(missions, {
+    fields: [missionRubricCriteria.missionId],
+    references: [missions.id],
+  }),
+}));
+
+export const missionEntitiesRelations = relations(missionEntities, ({ one, many }) => ({
+  mission: one(missions, {
+    fields: [missionEntities.missionId],
+    references: [missions.id],
+  }),
+  // Edges where this entity is the source / destination. Two relations to
+  // the same table need distinct relationNames so Drizzle can disambiguate.
+  linksFrom: many(missionEntityLinks, { relationName: 'link_from' }),
+  linksTo: many(missionEntityLinks, { relationName: 'link_to' }),
+}));
+
+export const missionEntityLinksRelations = relations(missionEntityLinks, ({ one }) => ({
+  mission: one(missions, {
+    fields: [missionEntityLinks.missionId],
+    references: [missions.id],
+  }),
+  from: one(missionEntities, {
+    fields: [missionEntityLinks.fromEntity],
+    references: [missionEntities.id],
+    relationName: 'link_from',
+  }),
+  to: one(missionEntities, {
+    fields: [missionEntityLinks.toEntity],
+    references: [missionEntities.id],
+    relationName: 'link_to',
+  }),
+}));
+
+export const missionOpportunitiesRelations = relations(missionOpportunities, ({ one }) => ({
+  mission: one(missions, {
+    fields: [missionOpportunities.missionId],
+    references: [missions.id],
+  }),
+}));
+
+export const missionTrendsRelations = relations(missionTrends, ({ one }) => ({
+  mission: one(missions, {
+    fields: [missionTrends.missionId],
+    references: [missions.id],
+  }),
+}));
+
+export const missionResearchMovesRelations = relations(missionResearchMoves, ({ one }) => ({
+  mission: one(missions, {
+    fields: [missionResearchMoves.missionId],
+    references: [missions.id],
   }),
 }));

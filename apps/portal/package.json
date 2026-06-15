@@ -13,6 +13,7 @@
     "e2e:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
     "@auth/drizzle-adapter": "^1.7.4",
     "@industrysignal/db": "workspace:*",
     "@industrysignal/i18n": "workspace:*",

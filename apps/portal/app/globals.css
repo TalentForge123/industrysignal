@@ -58,3 +58,37 @@ body {
 .bbg-table .up { color: var(--signal-up); }
 .bbg-table .dn { color: var(--signal-down); }
 .bbg-table .key { color: var(--accent-text); }
+
+/* ============================================================
+   Print — client deliverable only. The Mission detail's
+   Deliverable modal carries class `.deliverable`; on window.print()
+   we isolate it (hide the shell + the modal backdrop + any
+   `.no-print` chrome) and float it to the page top. A faithful
+   server-side PDF via Playwright lands in Sprint E; this keeps the
+   in-browser "Tisk / PDF" affordance honest until then.
+   ============================================================ */
+@media print {
+  body {
+    background: #fff !important;
+  }
+  body * {
+    visibility: hidden !important;
+  }
+  .deliverable,
+  .deliverable * {
+    visibility: visible !important;
+  }
+  .deliverable {
+    position: absolute !important;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

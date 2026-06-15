@@ -50,6 +50,27 @@
       "when": 1779125647757,
       "tag": "0006_keen_blazing_skull",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1779390289951,
+      "tag": "0007_lively_hellfire_club",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780432645637,
+      "tag": "0008_striped_slyde",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781554843944,
+      "tag": "0009_light_vivisector",
+      "breakpoints": true
     }
   ]
 }

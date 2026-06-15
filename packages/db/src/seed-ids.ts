@@ -28,6 +28,18 @@ export const SEED_IDS = {
     vitkovice: 'we-test-vitkovice',
   },
   insolvency: 'ins-test-vitkovice',
+  report: {
+    // Published quarterly report — drives the portal report view to
+    // assert against the DB path rather than the mock fallback.
+    publishedQ3: {
+      id: 'rep-test-2026-q3',
+      slug: '2026-q3',
+      titleCs: 'Test publikovaný report — Q3 2026',
+      titleEn: 'Test published report — Q3 2026',
+      sectionTitleCs: 'Testovací makro sekce',
+      sectionTitleEn: 'Test macro section',
+    },
+  },
   officers: {
     skodaCeo: 'off-test-skoda-ceo',
     vitkoviceCeo: 'off-test-vitkovice-ceo',
@@ -44,5 +56,27 @@ export const SEED_IDS = {
   testIcos: {
     // Unipetrol RPA — valid CZ IČO, not in the seeded entries.
     unseeded: '62193581',
+  },
+  // Mission fixture — M2C → DE (replicate), the canonical prototype seed
+  // from MissionData.js. Entity ids are slug-stable so links + graph
+  // assertions stay deterministic across re-seeds.
+  mission: {
+    m2cDe: {
+      id: 'msn-test-2026-014',
+      code: 'MSN-2026-014',
+    },
+    entities: {
+      m2c: 'me-test-m2c',
+      apleona: 'me-test-apleona',
+      dussmann: 'me-test-dussmann',
+      wisag: 'me-test-wisag',
+      piepenbrock: 'me-test-piepenbrock',
+      db: 'me-test-db',
+      siemens: 'me-test-siemens',
+      fraport: 'me-test-fraport',
+      charite: 'me-test-charite',
+      ahk: 'me-test-ahk',
+      gefma: 'me-test-gefma',
+    },
   },
 } as const;

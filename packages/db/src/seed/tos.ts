@@ -6,16 +6,15 @@
 // Neon branch that held this mission was deleted (the data source is the
 // repo, not that branch — reseeding is deterministic and repeatable).
 //
-// Maps 5 of the JSON's 7 blocks onto existing tables:
-//   mission        → mission            (1)
+// Maps all 7 JSON blocks onto the schema (trends + research_moves tables
+// and the extra mission columns / entity priority added in migration 0009):
+//   mission        → mission (1, incl. deliverable_note/trend_quarter/next_refresh)
 //   mission_rubric → mission_rubric_criterion (5)
-//   entities       → mission_entity     (17)
+//   entities       → mission_entity (17, incl. priority)
 //   entity_links   → mission_entity_link (6, from_ref/to_ref resolved to ids)
 //   opportunities  → mission_opportunity (4)
-//
-// NOT inserted — no destination in the current schema (see report):
-//   research_moves (4), mission_trends (6); mission.{deliverable_note,
-//   trend_quarter, next_refresh}; entities[].priority.
+//   research_moves → mission_research_move (4)
+//   mission_trends → mission_trend (6)
 //
 // Idempotent: deletes the MSN-2026-021 mission first (cascade clears its
 // children) then re-inserts, so re-runs never duplicate. Entity ids are
@@ -58,9 +57,11 @@ function czDateToIso(s: string | null | undefined): string | null {
 interface TosSeed {
   mission: Record<string, any>;
   mission_rubric: Array<{ ref: string; text: string; weight: string }>;
+  research_moves: Array<Record<string, any>>;
   entities: Array<Record<string, any>>;
   entity_links: Array<{ from_ref: string; to_ref: string; kind: string }>;
   opportunities: Array<Record<string, any>>;
+  mission_trends: Array<Record<string, any>>;
 }
 
 async function main() {
@@ -95,6 +96,9 @@ async function main() {
         ask: m.ask,
         deadline: czDateToIso(m.deadline),
         status: m.status ?? 'active',
+        deliverableNote: m.deliverable_note ?? null,
+        trendQuarter: m.trend_quarter ?? null,
+        nextRefresh: m.next_refresh ?? null,
       });
 
       // ----- rubric (5) ---------------------------------------------------
@@ -121,6 +125,7 @@ async function main() {
           source: e.source ?? null,
           verify: Boolean(e.verify),
           origin: (e.origin ?? 'db_seed') as any,
+          priority: (e.priority ?? null) as any,
         })),
       );
 
@@ -145,23 +150,55 @@ async function main() {
           sortOrder: i,
         })),
       );
+
+      // ----- research moves (4) — drive connector runs by ref -------------
+      await tx.insert(schema.missionResearchMoves).values(
+        data.research_moves.map((r, i) => ({
+          missionId: MISSION_ID,
+          ref: r.ref,
+          label: r.label ?? null,
+          role: (r.role ?? null) as any,
+          task: r.task ?? null,
+          sortOrder: i,
+        })),
+      );
+
+      // ----- mission trends (6) — territory/sector signals ----------------
+      await tx.insert(schema.missionTrends).values(
+        data.mission_trends.map((tr, i) => ({
+          missionId: MISSION_ID,
+          territory: tr.territory ?? null,
+          sector: tr.sector ?? null,
+          quarter: tr.quarter ?? null,
+          title: tr.title ?? null,
+          body: tr.body ?? null,
+          metric: tr.metric ?? null,
+          source: tr.source ?? null,
+          validated: Boolean(tr.validated),
+          tone: (tr.tone ?? 'info') as any,
+          sortOrder: i,
+        })),
+      );
     });
 
     // Report counts.
     const counts = {
       rubric: data.mission_rubric.length,
+      researchMoves: data.research_moves.length,
       entities: data.entities.length,
       links: data.entity_links.length,
       opportunities: data.opportunities.length,
+      trends: data.mission_trends.length,
     };
+    const withPriority = data.entities.filter((e) => e.priority).length;
     console.log(
       `[seed:tos] done — ${MISSION_CODE} (${m.client_name}) owner=${SEED_IDS.users.admin}; ` +
-        `rubric=${counts.rubric}, entities=${counts.entities}, links=${counts.links}, ` +
-        `opportunities=${counts.opportunities}`,
+        `rubric=${counts.rubric}, entities=${counts.entities} (priority=${withPriority}), ` +
+        `links=${counts.links}, opportunities=${counts.opportunities}, ` +
+        `research_moves=${counts.researchMoves}, trends=${counts.trends}`,
     );
     console.log(
-      '[seed:tos] SKIPPED (no schema home): research_moves(4), mission_trends(6), ' +
-        'mission.{deliverable_note,trend_quarter,next_refresh}, entities[].priority',
+      '[seed:tos] full mission seeded — mission.{deliverable_note,trend_quarter,next_refresh} included',
     );
   } finally {
     await client.end();

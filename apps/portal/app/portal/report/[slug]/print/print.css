@@ -1,0 +1,103 @@
+/* Print stylesheet — A4 editorial layout.
+   Loaded only on /portal/report/<slug>/print so it doesn't bleed into
+   the screen view. Black on cream, serif body, hairline borders. */
+
+@page {
+  size: A4;
+  margin: 16mm 18mm;
+}
+
+.print-root {
+  background: #f6f1e7;
+  color: #1c1813;
+  font-family: 'Source Serif Pro', 'Iowan Old Style', Georgia, serif;
+  font-size: 11pt;
+  line-height: 1.55;
+  padding: 0;
+  margin: 0;
+}
+
+.print-kicker {
+  font-family: 'Courier New', monospace;
+  font-size: 8.5pt;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8a6a16;
+  margin-bottom: 6pt;
+}
+
+.print-header {
+  border-bottom: 1pt solid #1c1813;
+  padding-bottom: 10pt;
+  margin-bottom: 14pt;
+}
+
+.print-title {
+  font-size: 24pt;
+  font-weight: 700;
+  margin: 4pt 0;
+  letter-spacing: -0.01em;
+}
+
+.print-lead {
+  font-style: italic;
+  font-size: 13pt;
+  color: #3b2d20;
+  margin: 8pt 0 0;
+}
+
+.print-meta {
+  font-family: 'Courier New', monospace;
+  font-size: 8pt;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6e5a3b;
+  margin-top: 10pt;
+  display: flex;
+  gap: 10pt;
+}
+
+.print-section {
+  border-top: 0.5pt solid #b9a274;
+  padding-top: 10pt;
+  margin-top: 12pt;
+  /* Avoid orphan headings at the bottom of a page. */
+  page-break-inside: avoid;
+}
+.print-section:first-of-type {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.print-section-title {
+  font-size: 16pt;
+  font-weight: 700;
+  margin: 2pt 0 6pt;
+}
+
+.print-summary {
+  font-style: italic;
+  font-size: 11.5pt;
+  color: #2b2218;
+  margin: 0 0 8pt;
+}
+
+.print-body {
+  font-size: 11pt;
+  color: #1c1813;
+  margin: 0 0 6pt;
+}
+
+.print-footer {
+  margin-top: 24pt;
+  border-top: 0.5pt solid #1c1813;
+  padding-top: 6pt;
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Courier New', monospace;
+  font-size: 7.5pt;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6e5a3b;
+}
