@@ -22,6 +22,11 @@ import {
   type ResearchBrief,
   type ResearchRubricItem,
 } from '@/lib/mission-research';
+import {
+  finishFrResearch,
+  prepareFrResearch,
+  type FrResearchInput,
+} from '@/lib/mission-research-fr';
 
 export async function POST(req: Request): Promise<NextResponse> {
   const session = await auth();
@@ -66,6 +71,52 @@ export async function POST(req: Request): Promise<NextResponse> {
     weight: r.weight,
   }));
   const existingNames = detail.entities.map((e) => e.name);
+
+  // FR-grounded path: when the mission targets France, candidates are pulled
+  // from the live FR connector and ranked by Sonnet — not invented. This is
+  // the Block-B pipeline (Haiku normalize → connector → Sonnet rank).
+  if ((m.targetMarket ?? '').toUpperCase().includes('FR')) {
+    try {
+      const frInput: FrResearchInput = {
+        clientName: m.clientName ?? '—',
+        clientNace: m.clientNace ?? m.segmentNace,
+        clientSector: m.clientSector,
+        segmentKeywords: m.segmentKeywords ?? [],
+        intent: m.intent,
+        rubric,
+        task,
+        existingNames,
+      };
+      const prep = await prepareFrResearch(frInput);
+      const res = await cachedLlmCall(
+        db,
+        {
+          kind: 'mission_research',
+          model: RESEARCH_MODEL,
+          systemPrompt: prep.system,
+          input: { task, missionId: m.id, query: prep.query },
+          temperature: 0.2,
+          consumerRef: `mission:${m.id}`,
+        },
+        async () => {
+          const r = await runClaudeJson({ system: prep.system, user: prep.user });
+          return { output: { text: r.text }, tokensIn: r.tokensIn, tokensOut: r.tokensOut };
+        },
+      );
+      const out = (res.result?.output ?? {}) as { text?: string };
+      const candidates = finishFrResearch(out.text ?? '', existingNames);
+      return NextResponse.json({
+        candidates,
+        grounded: 'fr',
+        pool: { companies: prep.pool.companies.length, tenders: prep.pool.tenders.length },
+      });
+    } catch (err) {
+      process.stderr.write(
+        `[missions/research:fr] ${err instanceof Error ? err.message : String(err)}\n`,
+      );
+      return NextResponse.json({ error: 'research_failed' }, { status: 502 });
+    }
+  }
 
   const system = buildSystemPrompt(brief, rubric);
   const user = buildUserPrompt(task, existingNames);

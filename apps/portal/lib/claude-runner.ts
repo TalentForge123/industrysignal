@@ -12,9 +12,14 @@
 import 'server-only';
 import Anthropic from '@anthropic-ai/sdk';
 
-// Sonnet for research / synthesis (BUILD-HANDOFF §2). Haiku is reserved for
-// column-mapping + extraction (Sprint D).
+// Sonnet for research / synthesis (BUILD-HANDOFF §2): ranking real connector
+// candidates against the rubric, assigning role / priority / edges.
 export const RESEARCH_MODEL = 'claude-sonnet-4-6';
+
+// Haiku for cheap classification / normalization — mapping the brief's CZ
+// NACE + keywords into FR NAF (APE) codes and search terms for the FR
+// connector. Fast work that doesn't need Sonnet.
+export const CLASSIFY_MODEL = 'claude-haiku-4-5';
 
 export interface ClaudeJsonArgs {
   system: string;

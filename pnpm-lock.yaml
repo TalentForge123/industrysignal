@@ -23,6 +23,9 @@ importers:
       '@auth/drizzle-adapter':
         specifier: ^1.7.4
         version: 1.11.2
+      '@industrysignal/connectors-fr':
+        specifier: workspace:*
+        version: link:../../packages/connectors-fr
       '@industrysignal/db':
         specifier: workspace:*
         version: link:../../packages/db
