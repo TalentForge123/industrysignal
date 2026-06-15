@@ -1,0 +1,425 @@
+{
+  "_comment": "IndustrySignal — canonical TOS mission seed, recovered from ui_kits/portal/MissionDataTOS.js (window.MissionTOSAll.cs). Czech canonical branch. Maps to BUILD-HANDOFF.md §3 tables. entity_links use from_ref/to_ref = entities[].ref; resolve to UUIDs at insert. research_moves seed mission_rubric-adjacent research tasks (store wherever the app keeps brief.researchMoves).",
+  "mission": {
+    "code": "MSN-2026-021",
+    "client_name": "TOS Varnsdorf",
+    "client_legal": "TOS VARNSDORF a.s.",
+    "client_sector": "Obráběcí stroje — horizontální vyvrtávačky",
+    "client_nace": "28.41",
+    "intent": "replicate",
+    "source_market": "CZ",
+    "target_market": "FR + PL",
+    "segment_nace": "28.41",
+    "segment_keywords": [
+      "horizontal boring mill",
+      "heavy machining",
+      "horizontální vyvrtávačka",
+      "WHT",
+      "WRD",
+      "hull boring",
+      "turbine casing",
+      "gun barrel"
+    ],
+    "ask": "Naše znalost trhu je střípkovitá a u vzdálených teritorií jsme stoprocentně závislí na partnerech. Chceme vědět, kdo ve Francii a Polsku nakupuje velké horizontky, přes koho dnes (DMG Mori, Mazak, Fermat) — a kde převzít vztah po pomalé a drahé konkurenci.",
+    "deadline": "30. 6. 2026",
+    "deliverable_note": "pilotní vztahová mapa · Francie + Polsko",
+    "trend_quarter": "Q2 2026",
+    "next_refresh": "Q3 2026",
+    "status": "active"
+  },
+  "mission_rubric": [
+    {
+      "ref": "c1",
+      "text": "Obrábí velké skříně / hřídele / hlavně — typická práce pro horizontky třídy WHT/WRD (objem poptávky)",
+      "weight": "vysoká"
+    },
+    {
+      "ref": "c2",
+      "text": "Kupuje dnes od konkurence (DMG Mori, Mazak, Fermat) → replikovatelná, převzatelná vazba",
+      "weight": "vysoká"
+    },
+    {
+      "ref": "c3",
+      "text": "Roste kapacita / běží nový tendr (EU SAFE, defense ramp-up, jaderná obnova, PLI)",
+      "weight": "vysoká"
+    },
+    {
+      "ref": "c4",
+      "text": "Stávající dodavatel je drahý / pomalý / se slabým lokálním servisem v regionu",
+      "weight": "střední"
+    },
+    {
+      "ref": "c5",
+      "text": "Dosažitelný servis ze střední Evropy + přenositelná reference (italský úspěch WHT 110/130)",
+      "weight": "střední"
+    }
+  ],
+  "research_moves": [
+    {
+      "ref": "t1",
+      "label": "Odběratelé horizontek · FR",
+      "role": "target",
+      "task": "Najdi 4 velké francouzské výrobce (aerospace, obrana, energetika/jádro, kolejová vozidla), kteří obrábějí velké skříně, hřídele nebo hlavně a poptávají horizontální vyvrtávačky třídy WHT/WRD. U každého uveď sektor a proč je to práce pro velké horizontky."
+    },
+    {
+      "ref": "t2",
+      "label": "Odběratelé horizontek · PL",
+      "role": "target",
+      "task": "Najdi 4 velké polské výrobce (obrana, kolejová vozidla, důlní/těžební stroje, energetika a doprava plynu / tepelné výměníky), kteří ramp-upují kapacitu (EU SAFE, defense kontrakty, jaderný program) a potřebují velké obráběcí stroje."
+    },
+    {
+      "ref": "t3",
+      "label": "Vazby konkurence k převzetí",
+      "role": "target",
+      "task": "Najdi odběratele, kteří dnes kupují od DMG Mori, Mazak nebo Fermat ve Francii a Polsku — kde je dodavatel drahý/pomalý a vztah lze převzít. Přes worksWithNames propoj na konkrétního konkurenta z mapy."
+    },
+    {
+      "ref": "t4",
+      "label": "Kanály a tendry",
+      "role": "partner",
+      "task": "Najdi 3 oborové svazy, exportní kanály nebo tendrové platformy (strojírenské asociace, CzechTrade, EU/obranné tendry), které otevírají dveře české firmě s obráběcími stroji ve FR a PL."
+    }
+  ],
+  "entities": [
+    {
+      "ref": "tos",
+      "name": "TOS Varnsdorf",
+      "role": "client",
+      "city": "Varnsdorf · CZ",
+      "note": "Klient. Výrobce velkých horizontálních vyvrtávaček WHT/WRD. Cílí na replikaci exportního modelu ve Francii a Polsku.",
+      "decision_maker": null,
+      "source": "Klientský brief",
+      "verify": false,
+      "priority": null,
+      "origin": "db_seed"
+    },
+    {
+      "ref": "dmgmori",
+      "name": "DMG Mori",
+      "role": "competitor",
+      "city": "Bielefeld · DE / JP",
+      "note": "Globální lídr, premium cena. V regionu pomalé dodání a slabší servis — vazby k převzetí.",
+      "decision_maker": null,
+      "source": "Veřejný profil / teaser",
+      "verify": false,
+      "priority": null,
+      "origin": "db_seed"
+    },
+    {
+      "ref": "mazak",
+      "name": "Yamazaki Mazak",
+      "role": "competitor",
+      "city": "Oguchi · JP",
+      "note": "Silný v aerospace. Dlouhá montáž a nákladný lokální support v EU.",
+      "decision_maker": null,
+      "source": "Veřejný profil / teaser",
+      "verify": false,
+      "priority": null,
+      "origin": "db_seed"
+    },
+    {
+      "ref": "fermat",
+      "name": "Fermat",
+      "role": "competitor",
+      "city": "Praha · CZ",
+      "note": "Přímý český rival — horizontky WFT/WRF, stejná třída. Potkáváte se na stejných exportních tendrech.",
+      "decision_maker": null,
+      "source": "Veřejný profil / teaser",
+      "verify": false,
+      "priority": null,
+      "origin": "db_seed"
+    },
+    {
+      "ref": "tajmac",
+      "name": "Tajmac-ZPS",
+      "role": "competitor",
+      "city": "Zlín · CZ / IT",
+      "note": "Multi-spindle fokus — okrajový konkurent, jiná třída než velké horizontky.",
+      "decision_maker": null,
+      "source": "Veřejný profil / teaser",
+      "verify": false,
+      "priority": null,
+      "origin": "db_seed"
+    },
+    {
+      "ref": "knds",
+      "name": "KNDS France (Nexter)",
+      "role": "target",
+      "city": "Roanne / Versailles · FR",
+      "note": "Pozemní obrana — korby a hlavně. Hull boring a machining hlavní = třída WHT 110/130.",
+      "decision_maker": null,
+      "source": "OVĚŘIT — inferováno z trhu",
+      "verify": true,
+      "priority": "high",
+      "origin": "db_seed"
+    },
+    {
+      "ref": "safran",
+      "name": "Safran",
+      "role": "target",
+      "city": "Paris · FR",
+      "note": "Aerospace turbíny a strukturní díly. Velké skříně a komponenty pro WHT/WRD.",
+      "decision_maker": null,
+      "source": "OVĚŘIT — inferováno z trhu",
+      "verify": true,
+      "priority": "medium",
+      "origin": "db_seed"
+    },
+    {
+      "ref": "framatome",
+      "name": "Framatome",
+      "role": "target",
+      "city": "Le Creusot · FR",
+      "note": "Jaderné komponenty, reaktorové nádoby, tepelné výměníky — těžké vyvrtávání. Francouzská jaderná obnova.",
+      "decision_maker": null,
+      "source": "OVĚŘIT — inferováno z trhu",
+      "verify": true,
+      "priority": "high",
+      "origin": "db_seed"
+    },
+    {
+      "ref": "alstom",
+      "name": "Alstom",
+      "role": "target",
+      "city": "Saint-Ouen · FR",
+      "note": "Kolejová vozidla — machining velkých podvozkových a strukturních dílů.",
+      "decision_maker": null,
+      "source": "OVĚŘIT — inferováno z trhu",
+      "verify": true,
+      "priority": "medium",
+      "origin": "db_seed"
+    },
+    {
+      "ref": "hsw",
+      "name": "HSW — Huta Stalowa Wola",
+      "role": "target",
+      "city": "Stalowa Wola · PL",
+      "note": "Obrana — Borsuk IFV, Krab. EU SAFE ramp-up, hull boring a gun barrel = disciplína WHT 110/130.",
+      "decision_maker": null,
+      "source": "OVĚŘIT — inferováno z trhu",
+      "verify": true,
+      "priority": "high",
+      "origin": "db_seed"
+    },
+    {
+      "ref": "pesa",
+      "name": "PESA Bydgoszcz",
+      "role": "target",
+      "city": "Bydgoszcz · PL",
+      "note": "Kolejová vozidla — lokomotivy a tramvaje, machining velkých dílů. Rostoucí kapacita.",
+      "decision_maker": null,
+      "source": "OVĚŘIT — inferováno z trhu",
+      "verify": true,
+      "priority": "medium",
+      "origin": "db_seed"
+    },
+    {
+      "ref": "kghm",
+      "name": "KGHM",
+      "role": "target",
+      "city": "Lubin · PL",
+      "note": "Měděný důl — důlní a těžební stroje. Velké machinované díly pro výrobní/těžební průmysl.",
+      "decision_maker": null,
+      "source": "OVĚŘIT — inferováno z trhu",
+      "verify": true,
+      "priority": "medium",
+      "origin": "db_seed"
+    },
+    {
+      "ref": "gazsystem",
+      "name": "GAZ-SYSTEM",
+      "role": "target",
+      "city": "Warszawa · PL",
+      "note": "Doprava plynu — kompresní stanice, výměníky a tlakové komponenty. Infrastrukturní investice.",
+      "decision_maker": null,
+      "source": "OVĚŘIT — inferováno z trhu",
+      "verify": true,
+      "priority": "medium",
+      "origin": "db_seed"
+    },
+    {
+      "ref": "rafako",
+      "name": "Rafako",
+      "role": "target",
+      "city": "Racibórz · PL",
+      "note": "Energetika — kotle, tlakové celky a tepelné výměníky pro elektrárny. Velké svařence a machining = práce pro horizontky.",
+      "decision_maker": null,
+      "source": "OVĚŘIT — inferováno z trhu",
+      "verify": true,
+      "priority": "medium",
+      "origin": "db_seed"
+    },
+    {
+      "ref": "fr-partner",
+      "name": "FR obchodní partner",
+      "role": "partner",
+      "city": "Francie",
+      "note": "Dlouholetý francouzský partner. Dle klienta nejede na 100 % potenciálu — mapa slouží k řízení a doplnění slepých míst.",
+      "decision_maker": null,
+      "source": "Klientský brief",
+      "verify": false,
+      "priority": null,
+      "origin": "db_seed"
+    },
+    {
+      "ref": "czechtrade",
+      "name": "CzechTrade / velvyslanectví ČR",
+      "role": "partner",
+      "city": "Paris · Warszawa",
+      "note": "Exportní kanál a door-opener pro českého výrobce strojů vstupujícího do FR a PL.",
+      "decision_maker": null,
+      "source": "Veřejný subjekt",
+      "verify": false,
+      "priority": null,
+      "origin": "db_seed"
+    },
+    {
+      "ref": "cecimo",
+      "name": "CECIMO / Symop",
+      "role": "partner",
+      "city": "Brussels · Paris",
+      "note": "Evropská (CECIMO) a francouzská (Symop) asociace obráběcích strojů — kredibilita, kontakty, tendry.",
+      "decision_maker": null,
+      "source": "Veřejný subjekt",
+      "verify": false,
+      "priority": null,
+      "origin": "db_seed"
+    }
+  ],
+  "entity_links": [
+    {
+      "from_ref": "dmgmori",
+      "to_ref": "safran",
+      "kind": "serves"
+    },
+    {
+      "from_ref": "dmgmori",
+      "to_ref": "framatome",
+      "kind": "serves"
+    },
+    {
+      "from_ref": "mazak",
+      "to_ref": "knds",
+      "kind": "serves"
+    },
+    {
+      "from_ref": "mazak",
+      "to_ref": "alstom",
+      "kind": "serves"
+    },
+    {
+      "from_ref": "fermat",
+      "to_ref": "hsw",
+      "kind": "serves"
+    },
+    {
+      "from_ref": "fermat",
+      "to_ref": "kghm",
+      "kind": "serves"
+    }
+  ],
+  "opportunities": [
+    {
+      "ref": "o1",
+      "tag": "MEZERA",
+      "title": "Pomalý a drahý incumbent",
+      "body": "DMG Mori i Mazak nabízejí premium cenu, ale v regionu pomalou montáž a nákladný lokální servis. TOS konkuruje rychlostí dodání, cenou a dosažitelným servisem ze střední Evropy.",
+      "tone": "up"
+    },
+    {
+      "ref": "o2",
+      "tag": "RAMP-UP",
+      "title": "Obranný a aerospace ramp-up",
+      "body": "EU SAFE (€14+ mld u HSW), francouzská jaderná obnova a aerospace ekosystém ženou poptávku po heavy machining — hull boring, hlavně, turbínové a reaktorové skříně = přesně třída WHT 110/130.",
+      "tone": "info"
+    },
+    {
+      "ref": "o3",
+      "tag": "REFERENCE CZ",
+      "title": "Přenositelná reference a blízkost",
+      "body": "Italský úspěch (CO₂ reduction 15 % na WHT 110/130) je přenositelná reference. Střední Evropa = dosažitelný servis bez nákladové nevýhody velkých globálních hráčů.",
+      "tone": "info"
+    },
+    {
+      "ref": "o4",
+      "tag": "PŘÍMÝ RIVAL",
+      "title": "Fermat na stejných tendrech",
+      "body": "Fermat (CZ) cílí stejnou třídu horizontek na stejných exportních tendrech ve FR a PL. Mapa ukáže, kde je Fermat napřed a kde má TOS lepší servisní a cenovou pozici.",
+      "tone": "warn"
+    }
+  ],
+  "mission_trends": [
+    {
+      "ref": "fr1",
+      "territory": "Francie",
+      "sector": "Obrana",
+      "quarter": "Q2 2026",
+      "title": "LPM 2024–2030 navýší dělostřelectvo a obrněnce",
+      "body": "Francouzský zákon o vojenském plánování tlačí KNDS/Nexter na vyšší kadenci CAESAR a korby — boring koreb a hlavní = třída WHT 110/130.",
+      "metric": "€413 mld",
+      "source": "Loi de programmation militaire 2024–2030",
+      "validated": true,
+      "tone": "up"
+    },
+    {
+      "ref": "fr2",
+      "territory": "Francie",
+      "sector": "Energetika · jádro",
+      "quarter": "Q2 2026",
+      "title": "Program EPR2 — 6 nových reaktorů",
+      "body": "EDF a Framatome rozjíždí výstavbu reaktorů EPR2; těžké komponenty a tepelné výměníky = práce pro velké horizontky.",
+      "metric": "6+ bloků",
+      "source": "EDF EPR2 program",
+      "validated": true,
+      "tone": "info"
+    },
+    {
+      "ref": "fr3",
+      "territory": "Francie",
+      "sector": "Aerospace",
+      "quarter": "Q2 2026",
+      "title": "Safran / Airbus rate ramp",
+      "body": "Náběh výrobních rate-ů úzkotrupých letadel zvyšuje poptávku po obrábění turbínových skříní a strukturálních dílů.",
+      "metric": "A320 rate 75",
+      "source": "Airbus production outlook",
+      "validated": false,
+      "tone": "info"
+    },
+    {
+      "ref": "pl1",
+      "territory": "Polsko",
+      "sector": "Obrana",
+      "quarter": "Q2 2026",
+      "title": "EU SAFE žene HSW na double-shift",
+      "body": "Kontrakt na Borsuk a Krab tlačí HSW na cíl 100 Borsuk/rok — hull boring a gun barrel, přesně disciplína velkých horizontek.",
+      "metric": "€14,18 mld",
+      "source": "HSW kontrakt / EU SAFE",
+      "validated": true,
+      "tone": "up"
+    },
+    {
+      "ref": "pl2",
+      "territory": "Polsko",
+      "sector": "Energetika · jádro/plyn",
+      "quarter": "Q2 2026",
+      "title": "První polská JE + plynová infrastruktura",
+      "body": "Program PPEJ (JE Choczewo) a plynová infrastruktura (GAZ-SYSTEM) generují poptávku po tlakových komponentech a tepelných výměnících (Rafako).",
+      "metric": "1. blok 2033",
+      "source": "PPEJ / GAZ-SYSTEM",
+      "validated": false,
+      "tone": "info"
+    },
+    {
+      "ref": "pl3",
+      "territory": "Polsko",
+      "sector": "Kolejová vozidla",
+      "quarter": "Q2 2026",
+      "title": "Obnova vozového parku PKP",
+      "body": "Tendry na lokomotivy a EMU (PESA, Newag) zvyšují machining velkých strukturních a podvozkových dílů.",
+      "metric": "—",
+      "source": "PKP Intercity tendry",
+      "validated": false,
+      "tone": "info"
+    }
+  ]
+}
