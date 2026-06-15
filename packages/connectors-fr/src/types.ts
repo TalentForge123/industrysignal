@@ -102,6 +102,8 @@ export interface TenderRef {
   id: string;
   title: string;
   buyer: string | null;
+  /** Awardee on an award notice (FR: titulaire). null on call-for-tender. */
+  awardee: string | null;
   published: string | null;
   deadline: string | null;
   cpv: string | null;

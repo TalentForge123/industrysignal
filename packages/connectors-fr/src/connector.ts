@@ -15,6 +15,10 @@ import {
   type RechercheClientOptions,
 } from './recherche/client';
 import { normalizeProfile, normalizeRef } from './recherche/normalize';
+import { fetchBodaccBySiren } from './bodacc/client';
+import { normalizeDistress } from './bodacc/normalize';
+import { searchBoampRaw, type BoampSearchOpts } from './boamp/client';
+import { normalizeTenders } from './boamp/normalize';
 import type {
   CompanyRef,
   CompanyProfile,
@@ -41,10 +45,10 @@ export interface FrConnectorOptions {
 }
 
 export const frCapabilities: ConnectorCapabilities = {
-  hasFinancials: false, // arrives with INPI bilans (needs RNE key)
-  hasUBO: false, // arrives with INPI RNE bénéficiaires effectifs (key)
-  hasTenders: false, // arrives with BOAMP/TED client (next commit)
-  hasInsolvency: false, // arrives with BODACC client (next commit)
+  hasFinancials: false, // INPI bilans — needs an RNE key, not wired
+  hasUBO: false, // INPI RNE bénéficiaires effectifs — needs a key, not wired
+  hasTenders: true, // BOAMP open data
+  hasInsolvency: true, // BODACC open data
   hasOwnershipChain: false,
   hasNewsFeed: false, // handled by the shared GDELT layer, not here
   refreshLagDays: 7,
@@ -53,6 +57,20 @@ export const frCapabilities: ConnectorCapabilities = {
   // conservative and matches how research batches actually call it.
   rateLimit: { reqPerMin: 60 },
 };
+
+/**
+ * Sector / keyword tender search — the mission's real tender tool ("who
+ * wins relevant tenders in FR"). Beyond the per-id §14 contract method,
+ * exported for the research pipeline (Block B) to map buyers → targets and
+ * awardees → competitors/partners.
+ */
+export async function searchFrTenders(
+  opts: BoampSearchOpts & { now?: () => Date },
+): Promise<TenderRef[]> {
+  const stamp = (opts.now ?? (() => new Date()))().toISOString();
+  const rows = await searchBoampRaw(opts);
+  return normalizeTenders(rows, stamp);
+}
 
 export function createFrConnector(options: FrConnectorOptions = {}): CountryConnector {
   const cache = options.cache ?? new DiskCache();
@@ -94,18 +112,36 @@ export function createFrConnector(options: FrConnectorOptions = {}): CountryConn
       return rows.map((r) => normalizeRef(r, stamp));
     },
 
-    // --- below: wired in the next Block-A commit (BODACC / BOAMP / Comext / INPI) ---
+    async getDistressEvents(id: CountryCompanyId): Promise<DistressEvent[]> {
+      const stamp = now().toISOString();
+      const records = await fetchBodaccBySiren(id, {
+        fetcher: options.fetcher,
+        cache,
+        userAgent: options.userAgent,
+      });
+      return normalizeDistress(records, id, stamp);
+    },
+
+    async getTenders(id: CountryCompanyId): Promise<TenderRef[]> {
+      // BOAMP isn't indexed by awardee SIREN, so per-id is a best-effort
+      // free-text hit on the SIREN. The mission uses searchFrTenders()
+      // (keyword/sector) — the actually useful tender tool.
+      const stamp = now().toISOString();
+      const rows = await searchBoampRaw({
+        q: id.replace(/\D/g, ''),
+        fetcher: options.fetcher,
+        cache,
+        userAgent: options.userAgent,
+      });
+      return normalizeTenders(rows, stamp);
+    },
+
+    // --- key-gated / unavailable on free APIs (capabilities reflect this) ---
     async getFilings(_id: CountryCompanyId, _years: number[]): Promise<Filing[]> {
-      return []; // INPI bilans — needs RNE key; capability hasFinancials=false
-    },
-    async getDistressEvents(_id: CountryCompanyId): Promise<DistressEvent[]> {
-      return []; // BODACC — wired next
-    },
-    async getTenders(_id: CountryCompanyId): Promise<TenderRef[]> {
-      return []; // BOAMP/TED — wired next
+      return []; // INPI bilans — needs an RNE key; hasFinancials=false
     },
     async getOwnership(id: CountryCompanyId): Promise<OwnershipGraph> {
-      return { siren: id.replace(/\D/g, ''), ubos: [], source: null }; // INPI RNE — needs key
+      return { siren: id.replace(/\D/g, ''), ubos: [], source: null }; // INPI RNE — needs a key
     },
     async getTradeFlows(
       _direction: 'export' | 'import',
@@ -113,7 +149,10 @@ export function createFrConnector(options: FrConnectorOptions = {}): CountryConn
       _hs: string,
       _period: PeriodRange,
     ): Promise<TradeFlow[]> {
-      return []; // Eurostat Comext — wired next
+      // Eurostat Comext detailed trade (DS-045409) is not served by the free
+      // dissemination REST API (404 ERR_NOT_FOUND). Would need the bulk
+      // Comext download — out of scope for the free-sources cut.
+      return [];
     },
   };
 }

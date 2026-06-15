@@ -4,7 +4,7 @@
 //
 //   pnpm --filter @industrysignal/connectors-fr exec tsx test/smoke-live.ts
 
-import { createFrConnector } from '../src';
+import { createFrConnector, searchFrTenders } from '../src';
 
 async function main() {
   const fr = createFrConnector();
@@ -44,6 +44,29 @@ async function main() {
   console.log(`  companies have SIREN + NAF + source: ${bySector.every((c) => c.siren && c.source.url) ? 'OK' : 'FAIL'}`);
 
   if (!sourced) throw new Error('[smoke] guardrail: a dirigeant is missing a source');
+
+  console.log(`\n[smoke] getDistressEvents ${first.siren} (BODACC) ...`);
+  const distress = await fr.getDistressEvents(first.siren);
+  console.log(`  → ${distress.length} distress/lifecycle events`);
+  for (const d of distress.slice(0, 3)) {
+    console.log(`    ${d.date}  ${d.kind}  — ${d.detail ?? ''}`);
+  }
+  if (distress.some((d) => !d.source?.url)) throw new Error('[smoke] distress event missing source');
+
+  console.log('\n[smoke] searchFrTenders "usinage" (BOAMP, défense/aero sectors) ...');
+  const tenders = await searchFrTenders({ q: 'usinage', limit: 5 });
+  console.log(`  → ${tenders.length} tenders`);
+  for (const tdr of tenders.slice(0, 3)) {
+    console.log(`    ${tdr.published ?? '—'}  acheteur: ${tdr.buyer ?? '?'}`);
+    console.log(`      « ${tdr.title.slice(0, 90)} »  ${tdr.awardee ? `→ ${tdr.awardee}` : ''}`);
+    console.log(`      source: ${tdr.source.url}`);
+  }
+  if (tenders.length && tenders.some((tdr) => !tdr.source?.url)) {
+    throw new Error('[smoke] tender missing source');
+  }
+  console.log(`  tenders all sourced: ${tenders.every((tdr) => tdr.source?.url) ? 'OK' : 'FAIL'}`);
+  console.log(`  capabilities: ${JSON.stringify(fr.capabilities)}`);
+
   console.log('\n[smoke] PASS');
 }
 
