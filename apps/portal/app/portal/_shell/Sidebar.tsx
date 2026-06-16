@@ -52,6 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'srsc', code: 'SRSC', labelKey: 'nav_srsc', href: '/portal/srsc', newTag: true },
       { id: 'xmap', code: 'XMAP', labelKey: 'nav_xmap', href: '/portal/xmap', newTag: true },
+      { id: 'frsearch', code: 'FR', labelKey: 'nav_fr_search', href: '/portal/fr-search', newTag: true },
     ],
   },
 ];
