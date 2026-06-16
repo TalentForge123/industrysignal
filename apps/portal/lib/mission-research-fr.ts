@@ -68,32 +68,37 @@ function safeJsonObject(raw: string): Record<string, unknown> {
 }
 
 export async function deriveFrQuery(input: FrResearchInput): Promise<FrQuery> {
-  const system = `Jsi normalizátor oborových kódů. Převedeš český profil firmy na francouzské NAF (APE) kódy a francouzské vyhledávací termíny pro rejstřík firem.
+  // The query must target the DEMAND side — the French companies that would
+  // BUY / USE the client's machines (per the research task's sectors) — NOT
+  // the client's own manufacturing sector (which only surfaces competitors).
+  const system = `Jsi expert na francouzské průmyslové sektory. Klient PRODÁVÁ určitý druh strojů/produktů. Tvým úkolem je identifikovat ODBĚRATELSKÉ sektory — francouzské firmy, které takové stroje/produkty NAKUPUJÍ A POUŽÍVAJÍ ve své výrobě — podle zadaného úkolu, a vrátit jejich francouzské NAF (APE) kódy + vyhledávací termíny.
+
+KRITICKÉ:
+- Vracíš sektory ODBĚRATELŮ (poptávka), NE sektor klienta (nabídka). Pokud klient vyrábí obráběcí stroje, NEVRACÍŠ NAF výroby strojů (28.41Z) — vracíš sektory, které ty stroje kupují (letectví, obrana, jádro/energetika, kolejová vozidla, těžké strojírenství…).
+- Řiď se sektory uvedenými v ÚKOLU.
 
 PRAVIDLA VÝSTUPU (striktní):
 1. Odpověz POUZE validním JSON objektem, bez úvodu a bez markdown.
-2. Tvar: {"nafCodes": ["28.41Z", ...], "searchTerms": ["machine outil", ...]}
-3. nafCodes: max 4 platné francouzské NAF kódy (formát "NN.NNL", např. "28.41Z") odpovídající oboru klienta.
-4. searchTerms: max 4 francouzské termíny popisující produkt/segment (pro fulltext v rejstříku).
-5. Nic si nevymýšlej nad rámec oboru; když si nejsi jistý kódem, vynech ho.`;
-  const user = `Klient: ${input.clientName}; sektor: ${input.clientSector ?? '—'}; CZ NACE: ${input.clientNace ?? '—'}; klíčová slova segmentu: ${input.segmentKeywords.join(', ') || '—'}.`;
+2. Tvar: {"nafCodes": ["30.30Z", ...], "searchTerms": ["aéronautique", ...]}
+3. nafCodes: max 5 platných francouzských NAF kódů (formát "NN.NNL") odběratelských sektorů (např. 30.30Z letectví, 25.40Z zbraně/obrana, 30.20Z kolejová vozidla, 24.xx/25.xx těžký kov, energetika/jádro).
+4. searchTerms: max 5 francouzských termínů popisujících odběratele/aplikaci (např. "aéronautique", "défense", "nucléaire", "ferroviaire", "turbine").
+5. Nevymýšlej si neplatné kódy; když si kódem nejsi jistý, spolehni se na termíny.`;
+  const user = `Klient PRODÁVÁ: ${input.clientSector ?? '—'} (klíčová slova produktu: ${input.segmentKeywords.join(', ') || '—'}).
+ÚKOL (koho ve Francii hledáme = odběratelé): ${input.task}`;
 
   try {
-    const r = await runClaudeJson({ system, user, model: CLASSIFY_MODEL, maxTokens: 250, temperature: 0 });
+    const r = await runClaudeJson({ system, user, model: CLASSIFY_MODEL, maxTokens: 300, temperature: 0 });
     const o = safeJsonObject(r.text);
     const naf = Array.isArray(o.nafCodes) ? o.nafCodes.map((x) => String(x).trim()).filter(Boolean) : [];
     const terms = Array.isArray(o.searchTerms) ? o.searchTerms.map((x) => String(x).trim()).filter(Boolean) : [];
-    const fallbackNaf = input.clientNace ? [input.clientNace] : [];
     return {
-      nafCodes: (naf.length ? naf : fallbackNaf).slice(0, 4),
-      searchTerms: (terms.length ? terms : input.segmentKeywords).slice(0, 4),
+      nafCodes: naf.slice(0, 5),
+      // Fall back to the application keywords (turbine casing, gun barrel…),
+      // which describe demand-side use — never the client's machine-making NACE.
+      searchTerms: (terms.length ? terms : input.segmentKeywords).slice(0, 5),
     };
   } catch {
-    // Haiku unavailable → fall back to the brief's own data, still grounded.
-    return {
-      nafCodes: (input.clientNace ? [input.clientNace] : []).slice(0, 4),
-      searchTerms: input.segmentKeywords.slice(0, 4),
-    };
+    return { nafCodes: [], searchTerms: input.segmentKeywords.slice(0, 5) };
   }
 }
 
