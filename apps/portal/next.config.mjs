@@ -8,6 +8,10 @@ const nextConfig = {
   ],
   experimental: {
     typedRoutes: true,
+    // Keep the node-only browser driver out of the server bundle — it's
+    // dynamically imported at runtime by lib/deliverable-pdf.ts for PDF
+    // rendering (the webpackIgnore import alone can still trip the tracer).
+    serverComponentsExternalPackages: ['playwright', 'playwright-core'],
   },
 };
 

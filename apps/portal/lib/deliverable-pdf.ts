@@ -52,14 +52,17 @@ async function ensureFullShareToken(
 async function renderPdf(url: string, outPath: string): Promise<{ bytes: number; renderer: 'playwright' | 'stub' }> {
   try {
     // webpackIgnore keeps Next from trying to bundle the node-only browser
-    // driver; it's resolved at runtime on hosts that have it installed.
-    // @ts-expect-error - `playwright` is an optional runtime dependency, not in package.json.
+    // driver; it's resolved at runtime (declared as a portal dependency).
     const pw = await import(/* webpackIgnore: true */ 'playwright');
     const browser = await pw.chromium.launch({ headless: true });
     try {
       const ctx = await browser.newContext();
       const page = await ctx.newPage();
       await page.goto(url, { waitUntil: 'networkidle' });
+      // Render the on-screen (dark editorial) look, not print media — the
+      // global @media print rules hide everything outside `.deliverable`
+      // (built for the light report flow), which would blank the share page.
+      await page.emulateMedia({ media: 'screen' });
       const buf = await page.pdf({
         format: 'A4',
         printBackground: true,

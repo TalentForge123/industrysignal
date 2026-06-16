@@ -655,17 +655,36 @@ function Deliverable({
   lang: 'cs' | 'en';
   onClose: () => void;
 }) {
-  // PDF + read-only share link (Block C). Generated server-side from the
+  // PDF + read-only share links (Block C). Generated server-side from the
   // public /share/<token> page; the result links render below the toolbar.
-  const [shareBusy, setShareBusy] = useState(false);
-  const [shareInfo, setShareInfo] = useState<{ pdfUrl: string; shareUrl: string } | null>(null);
-  async function generateShare() {
-    setShareBusy(true);
+  const [shareBusy, setShareBusy] = useState<'pdf' | 'teaser' | null>(null);
+  const [shareInfo, setShareInfo] = useState<{ pdfUrl?: string; shareUrl: string; mode: 'full' | 'teaser' } | null>(null);
+  async function generatePdf() {
+    setShareBusy('pdf');
     try {
       const res = await fetch(`/api/missions/${encodeURIComponent(brief.code)}/pdf`, { method: 'POST' });
-      if (res.ok) setShareInfo((await res.json()) as { pdfUrl: string; shareUrl: string });
+      if (res.ok) {
+        const r = (await res.json()) as { pdfUrl: string; shareUrl: string };
+        setShareInfo({ ...r, mode: 'full' });
+      }
     } finally {
-      setShareBusy(false);
+      setShareBusy(null);
+    }
+  }
+  async function generateTeaser() {
+    setShareBusy('teaser');
+    try {
+      const res = await fetch(`/api/missions/${encodeURIComponent(brief.code)}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'teaser' }),
+      });
+      if (res.ok) {
+        const r = (await res.json()) as { shareUrl: string; mode: 'teaser' };
+        setShareInfo({ shareUrl: r.shareUrl, mode: 'teaser' });
+      }
+    } finally {
+      setShareBusy(null);
     }
   }
 
@@ -710,10 +729,14 @@ function Deliverable({
             className="no-print"
             style={{ marginBottom: 16, padding: '10px 14px', background: 'var(--accent-soft)', borderLeft: '2px solid var(--accent)', borderRadius: '0 var(--r-sm) var(--r-sm) 0', display: 'flex', flexDirection: 'column', gap: 6 }}
           >
-            <a href={shareInfo.pdfUrl} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--accent-text)' }}>
-              ↓ {t(lang, 'md_dlv_share_pdf')}
-            </a>
-            <div style={{ fontSize: 11, color: 'var(--fg-tertiary)' }}>{t(lang, 'md_dlv_share_link')}</div>
+            {shareInfo.pdfUrl && (
+              <a href={shareInfo.pdfUrl} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--accent-text)' }}>
+                ↓ {t(lang, 'md_dlv_share_pdf')}
+              </a>
+            )}
+            <div style={{ fontSize: 11, color: 'var(--fg-tertiary)' }}>
+              {shareInfo.mode === 'teaser' ? t(lang, 'md_dlv_share_teaser_link') : t(lang, 'md_dlv_share_link')}
+            </div>
             <input
               readOnly
               value={shareInfo.shareUrl}
@@ -723,8 +746,11 @@ function Deliverable({
           </div>
         )}
         <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
-          <Button kind="ghost" icon="file-text" onClick={generateShare} disabled={shareBusy}>
-            {shareBusy ? t(lang, 'md_dlv_share_busy') : t(lang, 'md_dlv_share')}
+          <Button kind="ghost" icon="external-link" onClick={generateTeaser} disabled={shareBusy !== null}>
+            {shareBusy === 'teaser' ? t(lang, 'md_dlv_share_busy') : t(lang, 'md_dlv_share_teaser')}
+          </Button>
+          <Button kind="ghost" icon="file-text" onClick={generatePdf} disabled={shareBusy !== null}>
+            {shareBusy === 'pdf' ? t(lang, 'md_dlv_share_busy') : t(lang, 'md_dlv_share')}
           </Button>
           <Button kind="primary" icon="download" onClick={() => window.print()}>
             {t(lang, 'md_dlv_print')}
