@@ -8,6 +8,7 @@ export {
   createFrConnector,
   frCapabilities,
   searchFrTenders,
+  searchFrCompanyProfiles,
   type FrConnectorOptions,
 } from './connector';
 export { DiskCache, NullCache, DAY_MS, type Cache } from './cache';

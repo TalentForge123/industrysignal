@@ -59,11 +59,29 @@ export const frCapabilities: ConnectorCapabilities = {
 };
 
 /**
- * Sector / keyword tender search — the mission's real tender tool ("who
- * wins relevant tenders in FR"). Beyond the per-id §14 contract method,
- * exported for the research pipeline (Block B) to map buyers → targets and
- * awardees → competitors/partners.
+ * Company search that returns FULL profiles (with public dirigeants) in one
+ * call — recherche-entreprises already embeds dirigeants in each search hit,
+ * so no per-company getCompany round-trip is needed. Powers the operator's
+ * "find FR companies" tool: search by NAF / keyword / department / size and
+ * get real companies + their statutory contacts, each sourced.
+ *
+ * NOTE on contacts: the registry exposes STATUTORY officers only (Président,
+ * Directeur Général, Gérant). Functional roles (Directeur des Achats / sales
+ * director) are NOT public here — they need a separate enrichment layer.
  */
+export async function searchFrCompanyProfiles(
+  query: CompanySearchQuery,
+  options: FrConnectorOptions = {},
+): Promise<CompanyProfile[]> {
+  const stamp = (options.now ?? (() => new Date()))().toISOString();
+  const rows = await searchRaw(query, {
+    fetcher: options.fetcher,
+    cache: options.cache,
+    userAgent: options.userAgent,
+  });
+  return rows.map((r) => normalizeProfile(r, stamp));
+}
+
 export async function searchFrTenders(
   opts: BoampSearchOpts & { now?: () => Date },
 ): Promise<TenderRef[]> {
