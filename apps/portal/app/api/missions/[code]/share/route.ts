@@ -7,8 +7,7 @@ import { NextResponse } from 'next/server';
 import { createMissionShare, getMissionDetail } from '@industrysignal/db';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-
-const PRINT_BASE_URL = process.env.PORTAL_PRINT_BASE_URL ?? 'http://localhost:3000';
+import { baseUrl } from '@/lib/base-url';
 
 export async function POST(
   req: Request,
@@ -39,5 +38,5 @@ export async function POST(
     mode,
     createdByUserId: userId,
   });
-  return NextResponse.json({ shareUrl: `${PRINT_BASE_URL}/share/${share.token}`, mode });
+  return NextResponse.json({ shareUrl: `${baseUrl()}/share/${share.token}`, mode });
 }

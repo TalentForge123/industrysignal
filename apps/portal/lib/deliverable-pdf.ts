@@ -22,8 +22,7 @@ import {
   type MissionRow,
 } from '@industrysignal/db';
 import { db } from './db';
-
-const PRINT_BASE_URL = process.env.PORTAL_PRINT_BASE_URL ?? 'http://localhost:3000';
+import { baseUrl } from './base-url';
 
 export interface DeliverableResult {
   /** Public URL of the generated PDF (local /deliverables/... or R2). */
@@ -107,7 +106,7 @@ export async function generateDeliverablePdf(
   userId: string | null,
 ): Promise<DeliverableResult> {
   const token = await ensureFullShareToken(db, mission.id, userId);
-  const shareUrl = `${PRINT_BASE_URL}/share/${token}`;
+  const shareUrl = `${baseUrl()}/share/${token}`;
 
   const dir = join(process.cwd(), 'public', 'deliverables');
   await mkdir(dir, { recursive: true });
