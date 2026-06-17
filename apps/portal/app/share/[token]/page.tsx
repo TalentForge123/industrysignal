@@ -180,23 +180,46 @@ export default async function SharePage({
     </div>
   );
 
-  function TeaserBody({ targets }: { targets: { id: string; name: string; city: string | null }[] }) {
-    const preview = targets.slice(0, 4);
+  function TeaserBody({
+    targets,
+  }: {
+    targets: { id: string; name: string; city: string | null; source: string | null }[];
+  }) {
+    // French targets = real registry-sourced (annuaire) or city flagged · FR.
+    const isFr = (t: { city: string | null; source: string | null }) =>
+      (t.source ?? '').includes('annuaire-entreprises') || /·\s*FR\b/i.test(t.city ?? '');
+    const fr = targets.filter(isFr);
+    const list = fr.length ? fr : targets;
+    const preview = list.slice(0, 5);
+
     return (
       <section>
-        <div style={sectionLabel}>Ukázka cílů (náhled)</div>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 30, fontWeight: 700, color: C.accent }}>{list.length}</span>
+            <span style={{ fontSize: 16, fontWeight: 600 }}>potenciálních odběratelů ve Francii</span>
+          </div>
+          <div style={{ fontSize: 12, color: C.fg3, marginTop: 4 }}>
+            Obrana · Letectví · Jádro / energetika · Kolejová vozidla
+          </div>
+        </div>
+
+        <div style={sectionLabel}>Ukázka (rozmazáno — plná verze odhalí jména a kontakty)</div>
         {preview.map((e) => (
-          <div key={e.id} style={{ marginBottom: 10, filter: 'blur(5px)', userSelect: 'none', pointerEvents: 'none' }} aria-hidden>
+          <div key={e.id} style={{ marginBottom: 10, filter: 'blur(5.5px)', userSelect: 'none', pointerEvents: 'none' }} aria-hidden>
             <div style={{ fontSize: 14, fontWeight: 600 }}>
               {e.name} <span style={{ color: C.muted, fontSize: 12 }}>· {e.city ?? ''}</span>
             </div>
-            <div style={{ fontSize: 13, color: C.fg2 }}>Relevance, rozhodovací osoba a zdroj jsou v plné verzi mapy.</div>
+            <div style={{ fontSize: 13, color: C.fg2 }}>Rozhodovací osoba a ozdrojovaná relevance jsou v plné verzi mapy.</div>
           </div>
         ))}
+
         <div style={{ marginTop: 20, padding: '16px 20px', background: C.accentSoft, borderLeft: `2px solid ${C.accentBar}`, borderRadius: '0 6px 6px 0' }}>
-          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Toto je náhled vztahové mapy.</div>
+          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>
+            {list.length} francouzských cílů z obrany, letectví, jádra a kolejových vozidel.
+          </div>
           <div style={{ fontSize: 13, color: C.fg2, lineHeight: 1.55 }}>
-            Plná verze obsahuje konkrétní firmy, rozhodovací osoby, ozdrojované vazby na mapě a příležitosti. Pro přístup k plné mapě nás kontaktujte.
+            Plná vztahová mapa obsahuje konkrétní firmy, rozhodovací osoby, ozdrojované vazby a příležitosti — vč. velkých aerospace &amp; obranných hráčů. Pro přístup nás kontaktujte.
           </div>
         </div>
       </section>
